@@ -4,12 +4,15 @@ import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
 import { useGradients, useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
 
 type ButtonProps = Omit<PressableProps, 'children'> & {
   title: string;
   variant?: 'primary' | 'secondary' | 'danger';
   icon?: React.ComponentProps<typeof Icon>['name'];
   loading?: boolean;
+  /** Vibración al tocar. `false` cuando la pantalla da su propia respuesta háptica. */
+  haptic?: boolean;
 };
 
 export function Button({
@@ -17,8 +20,10 @@ export function Button({
   variant = 'primary',
   icon,
   loading,
+  haptic = true,
   disabled,
   style,
+  onPress,
   ...rest
 }: ButtonProps) {
   const theme = useTheme();
@@ -35,6 +40,10 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       disabled={isDisabled}
+      onPress={(e) => {
+        if (haptic) haptics.tap();
+        onPress?.(e);
+      }}
       style={(state) => [
         styles.button,
         background,

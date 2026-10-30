@@ -12,6 +12,7 @@ import { Spacing } from '@/constants/theme';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
+import { haptics } from '@/lib/haptics';
 import { supabase } from '@/lib/supabase';
 import { getUserReviews } from '@/services/reviews';
 
@@ -79,8 +80,12 @@ function AuthForm() {
     setLoading(false);
 
     if (error) {
+      haptics.error();
       setError(error.message);
-    } else if (isSignUp && !data.session) {
+      return;
+    }
+    haptics.success();
+    if (isSignUp && !data.session) {
       const message = 'Revisa tu correo para confirmar tu cuenta.';
       if (Platform.OS === 'web') setError(message);
       else Alert.alert('Cuenta creada', message);

@@ -2,6 +2,7 @@ import { NativeTabs } from 'expo-router/native-tabs';
 import { useColorScheme } from 'react-native';
 
 import { Colors } from '@/constants/theme';
+import { haptics } from '@/lib/haptics';
 
 export default function AppTabs() {
   const scheme = useColorScheme();
@@ -12,7 +13,8 @@ export default function AppTabs() {
       backgroundColor={colors.background}
       indicatorColor={colors.backgroundElement}
       tintColor={colors.tint}
-      labelStyle={{ selected: { color: colors.tint } }}>
+      labelStyle={{ selected: { color: colors.tint } }}
+      screenListeners={{ tabPress: () => haptics.selection() }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Inicio</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />

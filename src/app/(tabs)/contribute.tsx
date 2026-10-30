@@ -15,6 +15,8 @@ import { VehicleSearchForm } from '@/components/vehicle-search-form';
 import { Spacing } from '@/constants/theme';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
+import { useKeepAwakeWhileFocused } from '@/hooks/use-keep-awake-while-focused';
+import { haptics } from '@/lib/haptics';
 import { getVehicle, searchVehicles, type VehicleQuery } from '@/services/carvector';
 import type { LocalPhoto } from '@/services/review-photos';
 import { createReview } from '@/services/reviews';
@@ -94,6 +96,9 @@ type ReviewFormProps = {
 };
 
 function ReviewForm({ userId, vehicle, onChangeVehicle }: ReviewFormProps) {
+  // Escribir una reseña larga (o tomar fotos) toma tiempo: que no se apague la pantalla
+  useKeepAwakeWhileFocused('review-form');
+
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -101,6 +106,7 @@ function ReviewForm({ userId, vehicle, onChangeVehicle }: ReviewFormProps) {
   const [cons, setCons] = useState('');
   const [mileage, setMileage] = useState('');
   const [photos, setPhotos] = useState<LocalPhoto[]>([]);
+  const [processingPhotos, setProcessingPhotos] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -125,9 +131,11 @@ function ReviewForm({ userId, vehicle, onChangeVehicle }: ReviewFormProps) {
         },
         photos
       );
+      haptics.success();
       router.push(`/vehicle/${vehicle.vehicle_id}`);
       onChangeVehicle();
     } catch (e) {
+      haptics.error();
       setError(e instanceof Error ? e.message : 'No se pudo publicar la reseña.');
     } finally {
       setSubmitting(false);
@@ -175,14 +183,19 @@ function ReviewForm({ userId, vehicle, onChangeVehicle }: ReviewFormProps) {
       </View>
 
       <Section title="Fotos (opcional)">
-        <ReviewPhotoPicker photos={photos} onChange={setPhotos} disabled={submitting} />
+        <ReviewPhotoPicker
+          photos={photos}
+          onChange={setPhotos}
+          disabled={submitting}
+          onProcessingChange={setProcessingPhotos}
+        />
       </Section>
 
       {error && <ThemedText themeColor="danger">{error}</ThemedText>}
       <Button
         title={submitting && photos.length > 0 ? 'Subiendo fotos…' : 'Publicar reseña'}
         onPress={submit}
-        disabled={!isValid}
+        disabled={!isValid || processingPhotos}
         loading={submitting}
       />
     </>

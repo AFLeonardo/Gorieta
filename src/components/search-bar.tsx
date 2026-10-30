@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'rea
 import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
 
 type SearchBarProps = Omit<TextInputProps, 'onChangeText' | 'onSubmitEditing'> & {
   value: string;
@@ -30,7 +31,10 @@ export function SearchBar({ value, onChangeText, onSubmit, style, ...rest }: Sea
         <Pressable
           accessibilityLabel="Limpiar búsqueda"
           hitSlop={Spacing.two}
-          onPress={() => onChangeText('')}>
+          onPress={() => {
+            haptics.tap();
+            onChangeText('');
+          }}>
           <Icon
             name={{ ios: 'xmark.circle.fill', android: 'cancel', web: 'cancel' }}
             size={18}
@@ -38,7 +42,13 @@ export function SearchBar({ value, onChangeText, onSubmit, style, ...rest }: Sea
           />
         </Pressable>
       )}
-      <Pressable accessibilityLabel="Buscar" hitSlop={Spacing.two} onPress={onSubmit}>
+      <Pressable
+        accessibilityLabel="Buscar"
+        hitSlop={Spacing.two}
+        onPress={() => {
+          haptics.tap();
+          onSubmit();
+        }}>
         <Icon
           name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
           size={22}

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
 
 type StarRatingProps = {
   value: number;
@@ -34,7 +35,10 @@ export function StarRating({ value, size = 16, onChange }: StarRatingProps) {
             hitSlop={Spacing.one}
             accessibilityRole="button"
             accessibilityLabel={`${n} estrellas`}
-            onPress={() => onChange(n)}>
+            onPress={() => {
+              haptics.selection();
+              onChange(n);
+            }}>
             {star}
           </Pressable>
         ) : (

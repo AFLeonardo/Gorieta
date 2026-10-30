@@ -1,26 +1,68 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { CameraCapture } from '@/components/camera-capture';
+import { CameraCapture, type CapturedPicture } from '@/components/camera-capture';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
-import { MAX_REVIEW_PHOTOS, type LocalPhoto } from '@/services/review-photos';
+import { useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
+import {
+  MAX_REVIEW_PHOTOS,
+  optimizeReviewPhoto,
+  type LocalPhoto,
+} from '@/services/review-photos';
 
 type ReviewPhotoPickerProps = {
   photos: LocalPhoto[];
   onChange: (photos: LocalPhoto[]) => void;
   disabled?: boolean;
+  /** Avisa mientras hay fotos optimizándose (para no publicar a medias). */
+  onProcessingChange?: (processing: boolean) => void;
 };
 
 /** Fotos de la reseña: tomar con la cámara, elegir de la galería y quitar. */
-export function ReviewPhotoPicker({ photos, onChange, disabled }: ReviewPhotoPickerProps) {
+export function ReviewPhotoPicker({
+  photos,
+  onChange,
+  disabled,
+  onProcessingChange,
+}: ReviewPhotoPickerProps) {
+  const theme = useTheme();
+  const photosRef = useRef(photos);
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
   const [cameraOpen, setCameraOpen] = useState(false);
-  const remaining = MAX_REVIEW_PHOTOS - photos.length;
+  const [processing, setProcessing] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const remaining = MAX_REVIEW_PHOTOS - photos.length - processing;
   const isFull = remaining <= 0;
+
+  useEffect(() => {
+    onProcessingChange?.(processing > 0);
+  }, [processing, onProcessingChange]);
+
+  /** Optimiza (redimensiona + JPEG) antes de agregar, así miniaturas y subida usan archivos ligeros. */
+  async function addPhotos(sources: CapturedPicture[]) {
+    setError(null);
+    setProcessing((n) => n + sources.length);
+    try {
+      const optimized = await Promise.all(
+        sources.map((s) => optimizeReviewPhoto(s.uri, s.width && s.height ? s : undefined))
+      );
+      // Usa la lista más reciente: el usuario pudo quitar fotos mientras se procesaban
+      onChange([...photosRef.current, ...optimized].slice(0, MAX_REVIEW_PHOTOS));
+    } catch {
+      setError('No se pudo procesar la foto. Intenta con otra.');
+      haptics.error();
+    } finally {
+      setProcessing((n) => n - sources.length);
+    }
+  }
 
   async function pickFromGallery() {
     // Abrir la galería no requiere permiso (selector del sistema)
@@ -28,16 +70,16 @@ export function ReviewPhotoPicker({ photos, onChange, disabled }: ReviewPhotoPic
       mediaTypes: 'images',
       allowsMultipleSelection: true,
       selectionLimit: remaining,
-      quality: 0.7,
+      // Sin compresión aquí: optimizeReviewPhoto comprime una sola vez
+      quality: 1,
     });
     if (result.canceled) return;
-    const picked = result.assets.map((a) => ({ uri: a.uri, mimeType: a.mimeType }));
-    onChange([...photos, ...picked].slice(0, MAX_REVIEW_PHOTOS));
+    await addPhotos(result.assets.slice(0, remaining));
   }
 
   return (
     <View style={styles.container}>
-      {photos.length > 0 && (
+      {(photos.length > 0 || processing > 0) && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -50,7 +92,10 @@ export function ReviewPhotoPicker({ photos, onChange, disabled }: ReviewPhotoPic
                   accessibilityRole="button"
                   accessibilityLabel={`Quitar foto ${i + 1}`}
                   hitSlop={Spacing.one}
-                  onPress={() => onChange(photos.filter((p) => p.uri !== photo.uri))}
+                  onPress={() => {
+                    haptics.tap();
+                    onChange(photos.filter((p) => p.uri !== photo.uri));
+                  }}
                   style={styles.remove}>
                   <Icon
                     name={{ ios: 'xmark', android: 'close', web: 'close' }}
@@ -59,6 +104,13 @@ export function ReviewPhotoPicker({ photos, onChange, disabled }: ReviewPhotoPic
                   />
                 </Pressable>
               )}
+            </View>
+          ))}
+          {Array.from({ length: processing }, (_, i) => (
+            <View
+              key={`processing-${i}`}
+              style={[styles.thumb, styles.processing, { backgroundColor: theme.backgroundElement }]}>
+              <ActivityIndicator />
             </View>
           ))}
         </ScrollView>
@@ -82,8 +134,15 @@ export function ReviewPhotoPicker({ photos, onChange, disabled }: ReviewPhotoPic
           onPress={pickFromGallery}
         />
       </View>
+      {error && (
+        <ThemedText type="small" themeColor="danger">
+          {error}
+        </ThemedText>
+      )}
       <ThemedText type="small" themeColor="textSecondary">
-        {isFull
+        {processing > 0
+          ? 'Optimizando fotos…'
+          : isFull
           ? `Máximo ${MAX_REVIEW_PHOTOS} fotos.`
           : `Puedes agregar hasta ${remaining} foto${remaining === 1 ? '' : 's'} más.`}
       </ThemedText>
@@ -91,9 +150,7 @@ export function ReviewPhotoPicker({ photos, onChange, disabled }: ReviewPhotoPic
       <CameraCapture
         visible={cameraOpen}
         onClose={() => setCameraOpen(false)}
-        onCapture={(uri) =>
-          onChange([...photos, { uri, mimeType: 'image/jpeg' }].slice(0, MAX_REVIEW_PHOTOS))
-        }
+        onCapture={(picture) => addPhotos([picture])}
       />
     </View>
   );
@@ -110,6 +167,10 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: Spacing.three,
+  },
+  processing: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   remove: {
     position: 'absolute',

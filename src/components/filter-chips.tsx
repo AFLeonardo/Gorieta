@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useGradients, useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
 
 export type FilterChip = {
   key: string;
@@ -36,7 +37,10 @@ export function FilterChips({ chips, selected, onSelect }: FilterChipsProps) {
             key={chip.key}
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}
-            onPress={() => onSelect(chip.key)}
+            onPress={() => {
+              if (!isSelected) haptics.selection();
+              onSelect(chip.key);
+            }}
             style={({ pressed }) => [
               styles.chip,
               isSelected

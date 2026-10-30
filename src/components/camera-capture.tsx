@@ -13,12 +13,15 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
+import { haptics } from '@/lib/haptics';
 
 type CameraCaptureProps = {
   visible: boolean;
   onClose: () => void;
-  onCapture: (uri: string) => void;
+  onCapture: (picture: CapturedPicture) => void;
 };
+
+export type CapturedPicture = { uri: string; width: number; height: number };
 
 const FLASH_CYCLE: FlashMode[] = ['off', 'auto', 'on'];
 
@@ -42,15 +45,17 @@ function CameraContent({ onClose, onCapture }: Omit<CameraCaptureProps, 'visible
   const [facing, setFacing] = useState<CameraType>('back');
   const [flash, setFlash] = useState<FlashMode>('off');
   const [taking, setTaking] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<CapturedPicture | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function takePicture() {
     if (!ready || taking) return;
     setTaking(true);
+    haptics.impact();
     try {
-      const picture = await cameraRef.current?.takePictureAsync({ quality: 0.7 });
-      if (picture) setPreview(picture.uri);
+      // Calidad alta aquí: la compresión final la hace optimizeReviewPhoto (evita comprimir dos veces)
+      const picture = await cameraRef.current?.takePictureAsync({ quality: 0.9 });
+      if (picture) setPreview({ uri: picture.uri, width: picture.width, height: picture.height });
     } catch {
       setError('No se pudo tomar la foto. Intenta de nuevo.');
     } finally {
@@ -85,7 +90,7 @@ function CameraContent({ onClose, onCapture }: Omit<CameraCaptureProps, 'visible
   if (preview) {
     return (
       <View style={styles.container}>
-        <Image source={preview} style={StyleSheet.absoluteFill} contentFit="contain" />
+        <Image source={preview.uri} style={StyleSheet.absoluteFill} contentFit="contain" />
         <SafeAreaView style={styles.bottomBar} edges={['bottom']}>
           <View style={styles.previewActions}>
             <Button
@@ -184,7 +189,10 @@ function RoundButton({
       accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={Spacing.two}
-      onPress={onPress}
+      onPress={() => {
+        haptics.tap();
+        onPress();
+      }}
       style={({ pressed }) => [styles.roundButton, pressed && styles.shutterPressed]}>
       <Icon name={icon} size={22} color="#fff" />
     </Pressable>
