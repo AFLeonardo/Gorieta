@@ -1,10 +1,12 @@
+import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { StarRating } from '@/components/star-rating';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { reviewPhotoUrl } from '@/services/review-photos';
 import { vehicleName, type Review } from '@/types/vehicle';
 
 type ReviewCardProps = {
@@ -31,6 +33,22 @@ export function ReviewCard({ review, showVehicle }: ReviewCardProps) {
       </View>
       <ThemedText type="smallBold">{review.title}</ThemedText>
       <ThemedText type="small">{review.body}</ThemedText>
+      {review.photos?.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.photos}>
+          {review.photos.map((path) => (
+            <Image
+              key={path}
+              source={reviewPhotoUrl(path)}
+              style={styles.photo}
+              contentFit="cover"
+              transition={200}
+            />
+          ))}
+        </ScrollView>
+      )}
       {review.pros && (
         <ThemedText type="small">
           <ThemedText type="smallBold">Pros: </ThemedText>
@@ -56,6 +74,14 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     padding: Spacing.three,
     gap: Spacing.two,
+  },
+  photos: {
+    gap: Spacing.two,
+  },
+  photo: {
+    width: 140,
+    height: 105,
+    borderRadius: Spacing.two,
   },
   header: {
     flexDirection: 'row',

@@ -35,6 +35,8 @@ export type Review = VehicleSnapshot & {
   pros: string | null;
   cons: string | null;
   mileage: number | null;
+  /** Rutas en el bucket `review-photos` de Supabase Storage. */
+  photos: string[];
   created_at: string;
   profiles: { username: string | null } | null;
 };

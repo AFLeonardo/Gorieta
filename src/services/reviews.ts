@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { removeReviewPhotos, uploadReviewPhotos, type LocalPhoto } from '@/services/review-photos';
 import type { Review, VehicleRating, VehicleSnapshot } from '@/types/vehicle';
 
 const REVIEW_COLUMNS = '*, profiles(username)';
@@ -67,15 +68,21 @@ export async function getVehicleRating(vehicleId: string) {
   return data as VehicleRating | null;
 }
 
-export async function createReview(userId: string, review: NewReview) {
-  const { error } = await supabase.from('reviews').insert({ ...review, user_id: userId });
+export async function createReview(userId: string, review: NewReview, photos: LocalPhoto[] = []) {
+  const photoPaths = await uploadReviewPhotos(userId, photos);
+  const { error } = await supabase
+    .from('reviews')
+    .insert({ ...review, user_id: userId, photos: photoPaths });
   if (error) {
+    // La reseña no se creó: no dejes fotos huérfanas en Storage
+    await removeReviewPhotos(photoPaths);
     if (error.code === '23505') throw new Error('Ya escribiste una reseña para este vehículo.');
     throw error;
   }
 }
 
-export async function deleteReview(id: string) {
-  const { error } = await supabase.from('reviews').delete().eq('id', id);
+export async function deleteReview(review: Pick<Review, 'id' | 'photos'>) {
+  const { error } = await supabase.from('reviews').delete().eq('id', review.id);
   if (error) throw error;
+  await removeReviewPhotos(review.photos);
 }

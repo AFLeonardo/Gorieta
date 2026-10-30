@@ -33,7 +33,24 @@
           "imageWidth": 76
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permite a $(PRODUCT_NAME) usar la cámara para tomar fotos de tu vehículo en tus reseñas.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite a $(PRODUCT_NAME) acceder a tus fotos para agregarlas a tus reseñas.",
+          "cameraPermission": "Permite a $(PRODUCT_NAME) usar la cámara para tomar fotos de tu vehículo en tus reseñas.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
