@@ -1,21 +1,32 @@
 import { ActivityIndicator, Pressable, StyleSheet, type PressableProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useGradients, useTheme } from '@/hooks/use-theme';
 
 type ButtonProps = Omit<PressableProps, 'children'> & {
   title: string;
   variant?: 'primary' | 'secondary' | 'danger';
+  icon?: React.ComponentProps<typeof Icon>['name'];
   loading?: boolean;
 };
 
-export function Button({ title, variant = 'primary', loading, disabled, style, ...rest }: ButtonProps) {
+export function Button({
+  title,
+  variant = 'primary',
+  icon,
+  loading,
+  disabled,
+  style,
+  ...rest
+}: ButtonProps) {
   const theme = useTheme();
-  const backgroundColor = {
-    primary: theme.tint,
-    secondary: theme.backgroundElement,
-    danger: theme.backgroundElement,
+  const gradients = useGradients();
+  const background = {
+    primary: { backgroundColor: theme.tint, backgroundImage: gradients.primary },
+    secondary: { backgroundColor: theme.backgroundSelected },
+    danger: { backgroundColor: theme.backgroundSelected },
   }[variant];
   const color = { primary: theme.onTint, secondary: theme.text, danger: theme.danger }[variant];
   const isDisabled = disabled || loading;
@@ -26,7 +37,7 @@ export function Button({ title, variant = 'primary', loading, disabled, style, .
       disabled={isDisabled}
       style={(state) => [
         styles.button,
-        { backgroundColor },
+        background,
         (state.pressed || isDisabled) && styles.dimmed,
         typeof style === 'function' ? style(state) : style,
       ]}
@@ -34,9 +45,12 @@ export function Button({ title, variant = 'primary', loading, disabled, style, .
       {loading ? (
         <ActivityIndicator color={color} />
       ) : (
-        <ThemedText type="smallBold" style={{ color }}>
-          {title}
-        </ThemedText>
+        <>
+          {icon && <Icon name={icon} size={18} color={color} />}
+          <ThemedText type="smallBold" style={{ color }}>
+            {title}
+          </ThemedText>
+        </>
       )}
     </Pressable>
   );
@@ -46,9 +60,11 @@ const styles = StyleSheet.create({
   button: {
     minHeight: 48,
     paddingHorizontal: Spacing.four,
-    borderRadius: Spacing.three,
+    borderRadius: 999,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Spacing.two,
   },
   dimmed: {
     opacity: 0.6,

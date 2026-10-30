@@ -9,28 +9,42 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-    tint: '#208AEF',
+    text: '#0E1B33',
+    background: '#EEF2F8',
+    backgroundElement: '#FFFFFF',
+    backgroundSelected: '#DDE5F2',
+    textSecondary: '#5B6B85',
+    tint: '#2F6FED',
     onTint: '#ffffff',
     star: '#F5A524',
     danger: '#D93036',
-    border: '#D9D9E0',
+    border: '#D5DDEA',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-    tint: '#4CA3F5',
+    text: '#F2F5FA',
+    background: '#0A1222',
+    backgroundElement: '#16213A',
+    backgroundSelected: '#22304F',
+    textSecondary: '#9AA8C2',
+    tint: '#4C8DFF',
     onTint: '#ffffff',
     star: '#F5B83D',
     danger: '#FF6369',
-    border: '#3A3D42',
+    border: '#2A3858',
+  },
+} as const;
+
+/** Degradados (sintaxis CSS para la prop de estilo `backgroundImage`). */
+export const Gradients = {
+  light: {
+    screen: 'linear-gradient(180deg, #D6E2F5 0%, #EEF2F8 40%)',
+    image: 'linear-gradient(160deg, #DCE7F7 0%, #F5F8FD 100%)',
+    primary: 'linear-gradient(90deg, #2F6FED 0%, #4C8DFF 100%)',
+  },
+  dark: {
+    screen: 'linear-gradient(180deg, #1C3260 0%, #0A1222 45%)',
+    image: 'linear-gradient(160deg, #22365E 0%, #121D33 100%)',
+    primary: 'linear-gradient(90deg, #2F6FED 0%, #4C8DFF 100%)',
   },
 } as const;
 

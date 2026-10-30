@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useGradients, useTheme } from '@/hooks/use-theme';
 
 type ScreenProps = PropsWithChildren<{
   title?: string;
@@ -28,6 +28,7 @@ export function Screen({
 }: ScreenProps) {
   const safeAreaInsets = useSafeAreaInsets();
   const theme = useTheme();
+  const gradients = useGradients();
   const insets = {
     ...safeAreaInsets,
     bottom: safeAreaInsets.bottom + (withTabBar ? BottomTabInset : 0) + Spacing.three,
@@ -46,7 +47,7 @@ export function Screen({
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: theme.background }}
+      style={{ flex: 1, backgroundColor: theme.background, backgroundImage: gradients.screen }}
       contentInset={insets}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
@@ -60,7 +61,9 @@ export function Screen({
         {title && (
           <View style={styles.header}>
             <View style={styles.headerText}>
-              <ThemedText type="subtitle">{title}</ThemedText>
+              <ThemedText type="title" style={styles.title}>
+                {title}
+              </ThemedText>
               {subtitle && <ThemedText themeColor="textSecondary">{subtitle}</ThemedText>}
             </View>
             {headerRight}
@@ -92,5 +95,10 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
+  },
+  title: {
+    fontSize: 36,
+    lineHeight: 44,
+    fontWeight: 800,
   },
 });
