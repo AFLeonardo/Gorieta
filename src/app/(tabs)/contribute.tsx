@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { ReviewPhotoPicker } from '@/components/review-photo-picker';
 import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
 import { StarRating } from '@/components/star-rating';
@@ -15,6 +16,7 @@ import { Spacing } from '@/constants/theme';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
 import { getVehicle, searchVehicles, type VehicleQuery } from '@/services/carvector';
+import type { LocalPhoto } from '@/services/review-photos';
 import { createReview } from '@/services/reviews';
 import { toSnapshot, type VehicleSnapshot } from '@/types/vehicle';
 
@@ -98,6 +100,7 @@ function ReviewForm({ userId, vehicle, onChangeVehicle }: ReviewFormProps) {
   const [pros, setPros] = useState('');
   const [cons, setCons] = useState('');
   const [mileage, setMileage] = useState('');
+  const [photos, setPhotos] = useState<LocalPhoto[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,15 +112,19 @@ function ReviewForm({ userId, vehicle, onChangeVehicle }: ReviewFormProps) {
     setError(null);
     try {
       const parsedMileage = Number.parseInt(mileage, 10);
-      await createReview(userId, {
-        ...vehicle,
-        rating,
-        title: title.trim(),
-        body: body.trim(),
-        pros: pros.trim() || undefined,
-        cons: cons.trim() || undefined,
-        mileage: Number.isNaN(parsedMileage) ? undefined : parsedMileage,
-      });
+      await createReview(
+        userId,
+        {
+          ...vehicle,
+          rating,
+          title: title.trim(),
+          body: body.trim(),
+          pros: pros.trim() || undefined,
+          cons: cons.trim() || undefined,
+          mileage: Number.isNaN(parsedMileage) ? undefined : parsedMileage,
+        },
+        photos
+      );
       router.push(`/vehicle/${vehicle.vehicle_id}`);
       onChangeVehicle();
     } catch (e) {
@@ -167,9 +174,13 @@ function ReviewForm({ userId, vehicle, onChangeVehicle }: ReviewFormProps) {
         />
       </View>
 
+      <Section title="Fotos (opcional)">
+        <ReviewPhotoPicker photos={photos} onChange={setPhotos} disabled={submitting} />
+      </Section>
+
       {error && <ThemedText themeColor="danger">{error}</ThemedText>}
       <Button
-        title="Publicar reseña"
+        title={submitting && photos.length > 0 ? 'Subiendo fotos…' : 'Publicar reseña'}
         onPress={submit}
         disabled={!isValid}
         loading={submitting}
