@@ -1,53 +1,71 @@
-import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import { Platform, StyleSheet, Text, type TextProps } from "react-native";
 
-import { Fonts, ThemeColor } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { FontFamily, Fonts, ThemeColor } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?:
+    | "default"
+    | "title"
+    | "small"
+    | "smallBold"
+    | "subtitle"
+    | "link"
+    | "linkPrimary"
+    | "code";
   themeColor?: ThemeColor;
 };
 
-export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
+export function ThemedText({
+  style,
+  type = "default",
+  themeColor,
+  ...rest
+}: ThemedTextProps) {
   const theme = useTheme();
+  const colorKey: ThemeColor =
+    themeColor ?? (type === "linkPrimary" ? "tint" : "text");
 
-  return <Text style={[{ color: theme[themeColor ?? 'text'] }, styles[type], style]} {...rest} />;
+  return (
+    <Text style={[{ color: theme[colorKey] }, styles[type], style]} {...rest} />
+  );
 }
 
 const styles = StyleSheet.create({
   small: {
+    fontFamily: FontFamily.bodyMedium,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: 500,
   },
   smallBold: {
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: 700,
   },
   default: {
+    fontFamily: FontFamily.bodyMedium,
     fontSize: 16,
     lineHeight: 24,
-    fontWeight: 500,
   },
   title: {
+    fontFamily: FontFamily.headingXL,
     fontSize: 48,
-    fontWeight: 600,
     lineHeight: 52,
   },
   subtitle: {
+    fontFamily: FontFamily.heading,
     fontSize: 32,
     lineHeight: 44,
-    fontWeight: 600,
   },
   link: {
+    fontFamily: FontFamily.bodyMedium,
     lineHeight: 30,
     fontSize: 14,
   },
   linkPrimary: {
+    fontFamily: FontFamily.bodySemiBold,
     lineHeight: 30,
     fontSize: 14,
-    color: '#3c87f7',
   },
   code: {
     fontFamily: Fonts.mono,
