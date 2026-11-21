@@ -1,15 +1,15 @@
-import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image } from "expo-image";
+import { router } from "expo-router";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { Spacing } from '@/constants/theme';
-import { bodyTypeLabel, fuelLabel } from '@/constants/vehicle-types';
-import { useGradients, useTheme } from '@/hooks/use-theme';
-import type { Vehicle } from '@/types/vehicle';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { Spacing } from "@/constants/theme";
+import { bodyTypeLabel, fuelLabel } from "@/constants/vehicle-types";
+import { useGradients, useTheme } from "@/hooks/use-theme";
+import type { Vehicle } from "@/types/vehicle";
 
 type VehicleShowcaseCardProps = {
   vehicle: Vehicle;
@@ -32,19 +32,27 @@ export function VehicleShowcaseCard({
 
   const stats = [
     {
-      icon: { ios: 'bolt.fill', android: 'bolt', web: 'bolt' },
+      icon: { ios: "bolt.fill", android: "bolt", web: "bolt" },
       value: vehicle.horsepower ? `${vehicle.horsepower} hp` : null,
-      label: 'Potencia',
+      label: "Potencia",
     },
     {
-      icon: { ios: 'gauge.with.dots.needle.67percent', android: 'speed', web: 'speed' },
+      icon: {
+        ios: "gauge.with.dots.needle.67percent",
+        android: "speed",
+        web: "speed",
+      },
       value: engineLabel(vehicle),
-      label: 'Motor',
+      label: "Motor",
     },
     {
-      icon: { ios: 'fuelpump.fill', android: 'local_gas_station', web: 'local_gas_station' },
+      icon: {
+        ios: "fuelpump.fill",
+        android: "local_gas_station",
+        web: "local_gas_station",
+      },
       value: fuelLabel(vehicle),
-      label: 'Combustible',
+      label: "Combustible",
     },
   ] as const;
 
@@ -54,7 +62,8 @@ export function VehicleShowcaseCard({
         accessibilityRole="link"
         accessibilityLabel={`Ver ${vehicle.year} ${vehicle.make} ${vehicle.model}`}
         onPress={openDetails}
-        style={({ pressed }) => pressed && styles.pressed}>
+        style={({ pressed }) => pressed && styles.pressed}
+      >
         <View style={[styles.imageWrap, { backgroundImage: gradients.image }]}>
           <Image
             source={vehicle.image_url}
@@ -63,11 +72,22 @@ export function VehicleShowcaseCard({
             transition={200}
           />
           {type && (
-            <View style={[styles.badge, { backgroundColor: theme.backgroundElement }]}>
+            <View
+              style={[
+                styles.badge,
+                { backgroundColor: theme.backgroundElement },
+              ]}
+            >
               <ThemedText type="smallBold">{type}</ThemedText>
             </View>
           )}
-          <View style={[styles.badge, styles.yearBadge, { backgroundColor: theme.tint }]}>
+          <View
+            style={[
+              styles.badge,
+              styles.yearBadge,
+              { backgroundColor: theme.tint },
+            ]}
+          >
             <ThemedText type="smallBold" style={{ color: theme.onTint }}>
               {vehicle.year}
             </ThemedText>
@@ -93,10 +113,14 @@ export function VehicleShowcaseCard({
         {stats.map((stat, i) => (
           <View
             key={stat.label}
-            style={[styles.stat, i > 0 && { borderLeftWidth: 1, borderLeftColor: theme.border }]}>
+            style={[
+              styles.stat,
+              i > 0 && { borderLeftWidth: 1, borderLeftColor: theme.border },
+            ]}
+          >
             <Icon name={stat.icon} size={22} color={theme.text} />
             <ThemedText type="smallBold" numberOfLines={1}>
-              {stat.value ?? '—'}
+              {stat.value ?? "—"}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
               {stat.label}
@@ -114,11 +138,15 @@ export function VehicleShowcaseCard({
         />
         <Button
           style={styles.flex}
-          title={saved ? 'Guardado' : 'Guardar'}
+          title={saved ? "Guardado" : "Guardar"}
           icon={
             saved
-              ? { ios: 'bookmark.fill', android: 'bookmark', web: 'bookmark' }
-              : { ios: 'bookmark', android: 'bookmark_border', web: 'bookmark_border' }
+              ? { ios: "bookmark.fill", android: "bookmark", web: "bookmark" }
+              : {
+                  ios: "bookmark",
+                  android: "bookmark_border",
+                  web: "bookmark_border",
+                }
           }
           loading={saving}
           onPress={onToggleSave}
@@ -137,7 +165,7 @@ function engineLabel(v: Vehicle) {
 const styles = StyleSheet.create({
   card: {
     borderRadius: Spacing.five,
-    overflow: 'hidden',
+    overflow: "hidden",
     paddingBottom: Spacing.three,
     gap: Spacing.three,
   },
@@ -148,15 +176,15 @@ const styles = StyleSheet.create({
     height: 200,
     margin: Spacing.two,
     borderRadius: Spacing.four,
-    overflow: 'hidden',
-    justifyContent: 'center',
+    overflow: "hidden",
+    justifyContent: "center",
   },
   image: {
-    width: '100%',
-    height: '85%',
+    width: "100%",
+    height: "85%",
   },
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: Spacing.three,
     left: Spacing.three,
     paddingHorizontal: Spacing.three,
@@ -178,7 +206,7 @@ const styles = StyleSheet.create({
     fontWeight: 800,
   },
   stats: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: Spacing.three,
   },
   stat: {
@@ -187,7 +215,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
   },
   actions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.two,
     paddingHorizontal: Spacing.three,
   },

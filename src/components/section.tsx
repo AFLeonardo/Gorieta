@@ -1,13 +1,20 @@
-import type { PropsWithChildren } from 'react';
-import { StyleSheet, View } from 'react-native';
+import type { PropsWithChildren } from "react";
+import { StyleSheet, View } from "react-native";
 
-import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { ThemedText } from "@/components/themed-text";
+import { Spacing } from "@/constants/theme";
 
-export function Section({ title, children }: PropsWithChildren<{ title: string }>) {
+export function Section({
+  title,
+  children,
+}: PropsWithChildren<{ title: string }>) {
   return (
     <View style={styles.section}>
-      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.title}>
+      <ThemedText
+        type="smallBold"
+        themeColor="textSecondary"
+        style={styles.title}
+      >
         {title}
       </ThemedText>
       {children}
@@ -20,7 +27,8 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   title: {
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
+    fontSize: 17,
   },
 });

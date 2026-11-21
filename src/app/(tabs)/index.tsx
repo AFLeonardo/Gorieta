@@ -19,7 +19,7 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1 }}>
       <Screen
-        title="Gorieta"
+        title="GORIETA"
         subtitle="Decide mejor con la experiencia de otros conductores."
         refreshing={top.loading || recent.loading}
         onRefresh={() => {
