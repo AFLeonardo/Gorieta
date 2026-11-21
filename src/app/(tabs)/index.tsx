@@ -61,7 +61,15 @@ export default function HomeScreen() {
         <Section title="Reseñas recientes">
           {recent.data && recent.data.length > 0 ? (
             recent.data.map((r) => (
-              <ReviewCard key={r.id} review={r} showVehicle />
+              <ReviewCard
+                key={r.id}
+                review={r}
+                showVehicle
+                onDeleted={() => {
+                  recent.reload();
+                  top.reload();
+                }}
+              />
             ))
           ) : (
             <StateView

@@ -55,7 +55,7 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
   useRefreshOnFocus(rating.reload);
   useRefreshOnFocus(reviews.reload);
 
-  const userHasReview = !!user && !!reviews.data?.some((r) => r.user_id === user.id);
+  const ownReview = user ? reviews.data?.find((r) => r.user_id === user.id) : undefined;
 
   return (
     <Screen withTabBar={false} hero={<HeroImage uri={vehicle.image_url} />}>
@@ -78,10 +78,17 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
         <SaveButton vehicle={vehicle} />
         <Button
           style={styles.flex}
-          title={userHasReview ? 'Ya la reseñaste' : 'Escribir reseña'}
-          disabled={userHasReview}
+          title={ownReview ? 'Editar mi reseña' : 'Escribir reseña'}
           onPress={() =>
-            router.navigate({ pathname: '/contribute', params: { vehicleId: vehicle.id } })
+            ownReview
+              ? router.push({
+                  pathname: '/review/[id]',
+                  params: { id: ownReview.id },
+                })
+              : router.navigate({
+                  pathname: '/contribute',
+                  params: { vehicleId: vehicle.id },
+                })
           }
         />
       </View>
@@ -160,7 +167,16 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
           empty={reviews.data?.length === 0}
           emptyText="Este vehículo aún no tiene reseñas."
         />
-        {reviews.data?.map((r) => <ReviewCard key={r.id} review={r} />)}
+        {reviews.data?.map((r) => (
+          <ReviewCard
+            key={r.id}
+            review={r}
+            onDeleted={() => {
+              reviews.reload();
+              rating.reload();
+            }}
+          />
+        ))}
       </Section>
     </Screen>
   );

@@ -10,11 +10,20 @@ export const MAX_REVIEW_PHOTOS = 5;
 const MAX_DIMENSION = 1600;
 const JPEG_QUALITY = 0.7;
 
-/** Foto local (cámara o galería) aún sin subir. */
+/**
+ * Foto de una reseña en el formulario: local (cámara o galería) aún sin subir, o ya
+ * subida cuando se edita una reseña (`path` es su ruta en Storage y `uri` su URL pública).
+ */
 export type LocalPhoto = {
   uri: string;
   mimeType?: string | null;
+  path?: string;
 };
+
+/** Convierte las rutas guardadas en una reseña en fotos para el formulario de edición. */
+export function storedReviewPhotos(paths: string[]): LocalPhoto[] {
+  return paths.map((path) => ({ uri: reviewPhotoUrl(path), path }));
+}
 
 /**
  * Reduce la foto a MAX_DIMENSION en su lado mayor y la recomprime como JPEG.

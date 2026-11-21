@@ -48,7 +48,9 @@ function Account({ userId, email }: { userId: string; email?: string }) {
           empty={reviews.data?.length === 0}
           emptyText="Todavía no escribes reseñas."
         />
-        {reviews.data?.map((r) => <ReviewCard key={r.id} review={r} showVehicle />)}
+        {reviews.data?.map((r) => (
+          <ReviewCard key={r.id} review={r} showVehicle onDeleted={reviews.reload} />
+        ))}
       </Section>
 
       <Button title="Cerrar sesión" variant="danger" onPress={() => supabase.auth.signOut()} />

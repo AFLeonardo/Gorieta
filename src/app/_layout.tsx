@@ -71,6 +71,10 @@ export default function RootLayout() {
             name="vehicle/[id]"
             options={{ title: "", headerBackButtonDisplayMode: "minimal" }}
           />
+          <Stack.Screen
+            name="review/[id]"
+            options={{ title: "Editar reseña", headerBackButtonDisplayMode: "minimal" }}
+          />
         </Stack>
       </ThemeProvider>
     </AuthProvider>
