@@ -1,12 +1,9 @@
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
-import { Animated, StyleSheet, useColorScheme } from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
 
-const PALETTES = {
-  light: ["#102A43", "#7C2D12", "#F97316"], // atardecer
-  dark: ["#050B14", "#102A43", "#1E3A8A"], // anochecer
-} as const;
+import { SplashColors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 const LOGOS = {
   light: require("@/assets/images/logo-diurno.png"),
@@ -27,7 +24,7 @@ export default function AnimatedSplash({
 }: Props) {
   const scheme = useColorScheme();
   const mode = scheme === "dark" ? "dark" : "light";
-  const colors = PALETTES[mode];
+  const backgroundColor = SplashColors[mode];
   const logo = LOGOS[mode];
 
   const [logoOpacity] = useState(() => new Animated.Value(0));
@@ -46,18 +43,12 @@ export default function AnimatedSplash({
   }, [duration, logoOpacity, onFinish]);
 
   return (
-    <LinearGradient
-      colors={colors}
-      locations={[0, 0.55, 1]}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
-      style={styles.container}
-      onLayout={onReady}
-    >
+    // Fondo sólido, igual al del splash nativo: no hay salto de color al pasar de uno a otro
+    <View style={[styles.container, { backgroundColor }]} onLayout={onReady}>
       <Animated.View style={[styles.logoSlot, { opacity: logoOpacity }]}>
         <Image source={logo} style={styles.logo} contentFit="contain" />
       </Animated.View>
-    </LinearGradient>
+    </View>
   );
 }
 

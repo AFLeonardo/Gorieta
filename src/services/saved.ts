@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { bestVehicleImage } from '@/services/vehicle-images';
 import type { VehicleSnapshot } from '@/types/vehicle';
 
 export async function getSavedVehicles() {
@@ -20,7 +21,17 @@ export async function isVehicleSaved(vehicleId: string) {
 }
 
 export async function saveVehicle(userId: string, vehicle: VehicleSnapshot) {
-  const { error } = await supabase.from('saved_vehicles').insert({ ...vehicle, user_id: userId });
+  // Solo las columnas de `saved_vehicles`: algunos objetos (p. ej. los del Top)
+  // traen campos extra como `avg_rating` que harían fallar el insert.
+  const { error } = await supabase.from('saved_vehicles').insert({
+    user_id: userId,
+    vehicle_id: vehicle.vehicle_id,
+    year: vehicle.year,
+    make: vehicle.make,
+    model: vehicle.model,
+    trim: vehicle.trim,
+    image_url: bestVehicleImage(vehicle),
+  });
   if (error) throw error;
 }
 

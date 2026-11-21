@@ -10,13 +10,17 @@ import {
 import { useFonts } from "expo-font";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useColorScheme } from "react-native";
-
-import { AnimatedSplashOverlay } from "@/components/animated-icon";
+import { Appearance, Platform } from "react-native";
 import { Colors } from "@/constants/theme";
 import { AuthProvider } from "@/hooks/use-auth";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 SplashScreen.preventAutoHideAsync();
+
+// Seguir siempre el tema del teléfono. Quita cualquier tema forzado que haya quedado
+// en el proceso nativo (p. ej. de una versión anterior con switch manual), ya que
+// una recarga de JS no lo limpia por sí sola.
+if (Platform.OS !== "web") Appearance.setColorScheme("auto");
 
 const navLight = {
   ...DefaultTheme,
@@ -59,12 +63,15 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ThemeProvider value={colorScheme === "dark" ? navDark : navLight}>
-        <AnimatedSplashOverlay />
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
             name="vehicle/[id]"
             options={{ title: "", headerBackButtonDisplayMode: "minimal" }}
+          />
+          <Stack.Screen
+            name="review/[id]"
+            options={{ title: "Editar reseña", headerBackButtonDisplayMode: "minimal" }}
           />
         </Stack>
       </ThemeProvider>

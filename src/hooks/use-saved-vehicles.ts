@@ -1,8 +1,10 @@
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { Alert, Platform } from 'react-native';
 
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
+import { haptics } from '@/lib/haptics';
 import { getSavedVehicles, saveVehicle, unsaveVehicle } from '@/services/saved';
 import type { VehicleSnapshot } from '@/types/vehicle';
 
@@ -19,15 +21,24 @@ export function useSavedVehicles() {
 
   async function toggle(vehicle: VehicleSnapshot) {
     if (!user) {
+      haptics.tap();
       router.navigate('/profile');
       return;
     }
     const wasSaved = isSaved(vehicle.vehicle_id);
+    // Respuesta inmediata al toque; si la petición falla, suena el error después
+    if (wasSaved) haptics.toggleOff();
+    else haptics.toggleOn();
     setPendingId(vehicle.vehicle_id);
     try {
       if (wasSaved) await unsaveVehicle(vehicle.vehicle_id);
       else await saveVehicle(user.id, vehicle);
       setOverrides((o) => ({ ...o, [vehicle.vehicle_id]: !wasSaved }));
+    } catch (error) {
+      haptics.error();
+      const message = error instanceof Error ? error.message : 'Inténtalo de nuevo.';
+      if (Platform.OS === 'web') window.alert(`No se pudo guardar: ${message}`);
+      else Alert.alert('No se pudo guardar', message);
     } finally {
       setPendingId(null);
     }

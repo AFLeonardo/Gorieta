@@ -1,7 +1,9 @@
-import { Image } from 'expo-image';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ReviewCard } from '@/components/review-card';
 import { Screen } from '@/components/screen';
@@ -10,14 +12,26 @@ import { StarRating } from '@/components/star-rating';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import {
+  ImageWithSkeleton,
+  ReviewCardSkeleton,
+  Skeleton,
+  SkeletonList,
+  VehicleCardSkeleton,
+  VehicleDetailSkeleton,
+} from '@/components/ui/skeleton';
 import { StateView } from '@/components/ui/state-view';
 import { VehicleCard } from '@/components/vehicle-card';
-import { Spacing } from '@/constants/theme';
+import { FontFamily, Radius, Spacing } from '@/constants/theme';
+import { bodyTypeLabel, fuelLabel } from '@/constants/vehicle-types';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
+import { useElevation, useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
 import { getSimilarVehicles, getVehicle } from '@/services/carvector';
-import { getMarketPrice } from '@/services/marketcheck';
+import { getMarketData } from '@/services/marketcheck';
 import { getVehicleRating, getVehicleReviews } from '@/services/reviews';
 import { isVehicleSaved, saveVehicle, unsaveVehicle } from '@/services/saved';
 import { toSnapshot, vehicleName, type Vehicle } from '@/types/vehicle';
@@ -31,11 +45,20 @@ const currency = new Intl.NumberFormat('en-US', {
 export default function VehicleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const vehicle = useAsync(() => getVehicle(id), [id]);
+  const { height: windowHeight } = useWindowDimensions();
 
   if (!vehicle.data) {
+    if (vehicle.loading) {
+      return (
+        <Screen
+          withTabBar={false}
+          hero={<VehicleDetailSkeleton heroHeight={windowHeight / 3} />}
+        />
+      );
+    }
     return (
       <Screen withTabBar={false}>
-        <StateView loading={vehicle.loading} error={vehicle.error} onRetry={vehicle.reload} />
+        <StateView error={vehicle.error} onRetry={vehicle.reload} />
       </Screen>
     );
   }
@@ -45,7 +68,9 @@ export default function VehicleScreen() {
 
 function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
   const { user } = useAuth();
-  const price = useAsync(() => getMarketPrice(vehicle), [vehicle.id]);
+  // Una sola petición trae el precio de mercado y una foto real del modelo
+  const market = useAsync(() => getMarketData(vehicle), [vehicle.id]);
+  const price = market.data?.price;
   const rating = useAsync(() => getVehicleRating(vehicle.id), [vehicle.id]);
   const reviews = useAsync(() => getVehicleReviews(vehicle.id), [vehicle.id]);
   const similar = useAsync(() => getSimilarVehicles(vehicle), [vehicle.id]);
@@ -53,19 +78,33 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
   useRefreshOnFocus(rating.reload);
   useRefreshOnFocus(reviews.reload);
 
-  const userHasReview = !!user && !!reviews.data?.some((r) => r.user_id === user.id);
+  const ownReview = user ? reviews.data?.find((r) => r.user_id === user.id) : undefined;
+  const theme = useTheme();
+  const elevation = useElevation();
+  const panelStyle = [styles.panel, elevation];
+  // Etiqueta corta en naranja, como la marca en las tarjetas del Top: "SEDÁN · GASOLINA"
+  const eyebrow = [bodyTypeLabel(vehicle), fuelLabel(vehicle)].filter(Boolean).join(' · ');
 
   return (
-    <Screen withTabBar={false}>
+    <View style={styles.flex}>
+    <Screen
+      withTabBar={false}
+      bottomInset={ACTION_BAR_SPACE}
+      hero={
+        <HeroImage
+          photo={market.data?.photo}
+          fallback={vehicle.image_url}
+          pending={market.loading && !market.data}
+        />
+      }>
       <Stack.Screen options={{ title: `${vehicle.make} ${vehicle.model}` }} />
 
       <View style={styles.hero}>
-        <Image
-          source={vehicle.image_url}
-          style={styles.heroImage}
-          contentFit="contain"
-          transition={200}
-        />
+        {eyebrow ? (
+          <ThemedText type="smallBold" style={[styles.eyebrow, { color: theme.accentSecondary }]}>
+            {eyebrow}
+          </ThemedText>
+        ) : null}
         <ThemedText type="subtitle">{vehicleName(vehicle)}</ThemedText>
         {vehicle.trim && <ThemedText themeColor="textSecondary">{vehicle.trim}</ThemedText>}
         {rating.data && (
@@ -78,33 +117,29 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
         )}
       </View>
 
-      <View style={styles.actions}>
-        <SaveButton vehicle={vehicle} />
-        <Button
-          style={styles.flex}
-          title={userHasReview ? 'Ya la reseñaste' : 'Escribir reseña'}
-          disabled={userHasReview}
-          onPress={() =>
-            router.navigate({ pathname: '/contribute', params: { vehicleId: vehicle.id } })
-          }
-        />
-      </View>
-
       <Section title="Precio de mercado">
-        <ThemedView type="backgroundElement" style={styles.panel}>
-          {price.data ? (
+        <ThemedView type="backgroundElement" style={panelStyle}>
+          {price ? (
             <>
-              <ThemedText type="subtitle">{currency.format(price.data.median)}</ThemedText>
+              <ThemedText type="subtitle" style={[styles.price, { color: theme.accent }]}>
+                {currency.format(price.median)}
+              </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                Mediana de {price.data.count} anuncios activos · rango{' '}
-                {currency.format(price.data.min)} – {currency.format(price.data.max)}
+                Mediana de {price.count} anuncios activos · rango{' '}
+                {currency.format(price.min)} – {currency.format(price.max)}
               </ThemedText>
             </>
           ) : (
             <StateView
-              loading={price.loading}
-              error={price.error}
-              onRetry={price.reload}
+              loading={market.loading}
+              skeleton={
+                <>
+                  <Skeleton width="45%" height={28} />
+                  <Skeleton width="80%" height={12} />
+                </>
+              }
+              error={market.error}
+              onRetry={market.reload}
               empty
               emptyText="No hay anuncios activos para calcular un precio."
             />
@@ -113,19 +148,11 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
       </Section>
 
       <Section title="Especificaciones">
-        <ThemedView type="backgroundElement" style={styles.panel}>
-          <Spec label="Motor" value={engineLabel(vehicle)} />
-          <Spec label="Potencia" value={vehicle.horsepower && `${vehicle.horsepower} hp`} />
-          <Spec label="Transmisión" value={vehicle.transmission} />
-          <Spec label="Tracción" value={vehicle.drive_type} />
-          <Spec label="Combustible" value={vehicle.fuel_type} />
-          <Spec label="Carrocería" value={vehicle.body_class} />
-          <Spec label="Puertas" value={vehicle.doors} />
-        </ThemedView>
+        <SpecGrid vehicle={vehicle} />
       </Section>
 
       <Section title="Fallas comunes">
-        <ThemedView type="backgroundElement" style={styles.panel}>
+        <ThemedView type="backgroundElement" style={panelStyle}>
           <Spec label="Quejas registradas" value={vehicle.complaint_count ?? 0} />
           <Spec label="Boletines técnicos" value={vehicle.tsb_count ?? 0} />
           <Spec label="Investigaciones" value={vehicle.investigation_count ?? 0} />
@@ -140,6 +167,7 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={styles.carouselScroll}
             contentContainerStyle={styles.carousel}>
             {similar.data.map((v) => (
               <VehicleCard key={v.id} vehicle={toSnapshot(v)} compact />
@@ -148,6 +176,12 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
         ) : (
           <StateView
             loading={similar.loading}
+            skeleton={
+              <View style={styles.carouselSkeleton}>
+                <VehicleCardSkeleton compact />
+                <VehicleCardSkeleton compact />
+              </View>
+            }
             error={similar.error}
             onRetry={similar.reload}
             empty
@@ -159,15 +193,219 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
       <Section title="Reseñas">
         <StateView
           loading={reviews.loading && !reviews.data}
+          skeleton={
+            <SkeletonList count={2}>
+              <ReviewCardSkeleton />
+            </SkeletonList>
+          }
           error={reviews.error}
           onRetry={reviews.reload}
           empty={reviews.data?.length === 0}
+          emptyIcon={{ ios: 'text.bubble', android: 'rate_review', web: 'rate_review' }}
           emptyText="Este vehículo aún no tiene reseñas."
         />
-        {reviews.data?.map((r) => <ReviewCard key={r.id} review={r} />)}
+        {reviews.data?.map((r) => (
+          <ReviewCard
+            key={r.id}
+            review={r}
+            onDeleted={() => {
+              reviews.reload();
+              rating.reload();
+            }}
+          />
+        ))}
       </Section>
     </Screen>
+
+      {/* Acciones principales siempre a la mano, flotando sobre el contenido */}
+      <ActionBar>
+        <SaveButton vehicle={vehicle} />
+        <Button
+          style={styles.flex}
+          title={ownReview ? 'Editar mi reseña' : 'Escribir reseña'}
+          onPress={() =>
+            ownReview
+              ? router.push({
+                  pathname: '/review/[id]',
+                  params: { id: ownReview.id },
+                })
+              : // dismissTo regresa a las pestañas ya abiertas; navigate apilaría otra copia
+                router.dismissTo({
+                  pathname: '/contribute',
+                  params: { vehicleId: vehicle.id },
+                })
+          }
+        />
+      </ActionBar>
+    </View>
   );
+}
+
+/**
+ * Imagen a todo lo ancho, como máximo 1/3 de la altura de la pantalla. El último
+ * cuarto se funde con el fondo mediante un degradado.
+ */
+type HeroImageProps = {
+  /** Foto real de MarketCheck (si la hay). */
+  photo?: string | null;
+  /** Ilustración de CarVector: se usa si no hay foto o si la foto no carga. */
+  fallback: Vehicle['image_url'];
+  /** Aún esperando a MarketCheck: muestra el skeleton en vez de la ilustración. */
+  pending: boolean;
+};
+
+function HeroImage({ photo, fallback, pending }: HeroImageProps) {
+  const theme = useTheme();
+  const { width, height: windowHeight } = useWindowDimensions();
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+  // Las fotos vienen de servidores de concesionarios: si un enlace murió, usa la ilustración
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const uri = photo && !photoFailed ? photo : fallback;
+
+  const maxHeight = windowHeight / 3;
+  const height = aspectRatio ? Math.min(width / aspectRatio, maxHeight) : maxHeight;
+
+  if (pending) return <Skeleton height={maxHeight} radius={0} />;
+
+  return (
+    <View style={{ height }}>
+      <ImageWithSkeleton
+        key={uri}
+        source={uri}
+        style={StyleSheet.absoluteFill}
+        onError={() => {
+          if (uri === photo) setPhotoFailed(true);
+        }}
+        contentFit="cover"
+        transition={200}
+        onLoad={({ source }) => {
+          if (source.width && source.height) setAspectRatio(source.width / source.height);
+        }}
+      />
+      <LinearGradient
+        colors={[`${theme.background}00`, theme.background]}
+        style={styles.heroFade}
+        pointerEvents="none"
+      />
+    </View>
+  );
+}
+
+/** Alto de la barra flotante + su separación: el contenido deja este espacio al final. */
+const ACTION_BAR_SPACE = 48 + Spacing.two * 2 + Spacing.three;
+
+/**
+ * Barra de acciones flotante. En iOS 26+ usa el vidrio nativo (Liquid Glass); en el resto,
+ * una superficie sólida con la misma elevación que las tarjetas.
+ */
+function ActionBar({ children }: { children: React.ReactNode }) {
+  const insets = useSafeAreaInsets();
+  const theme = useTheme();
+  const elevation = useElevation();
+  const glass = isLiquidGlassAvailable();
+
+  return (
+    <GlassView
+      glassEffectStyle="regular"
+      isInteractive
+      style={[
+        styles.actionBar,
+        { bottom: Math.max(insets.bottom, Spacing.three) },
+        !glass && [elevation, { backgroundColor: theme.backgroundElement }],
+      ]}>
+      {children}
+    </GlassView>
+  );
+}
+
+type SpecItem = {
+  label: string;
+  value: string | number | null | undefined;
+  icon: React.ComponentProps<typeof Icon>['name'];
+};
+
+/** Especificaciones en mosaicos de 2 columnas: ícono, valor grande y etiqueta. */
+function SpecGrid({ vehicle }: { vehicle: Vehicle }) {
+  const theme = useTheme();
+  const elevation = useElevation();
+  const all: SpecItem[] = [
+    {
+      label: 'Potencia',
+      value: vehicle.horsepower && `${vehicle.horsepower} hp`,
+      icon: { ios: 'bolt.fill', android: 'bolt', web: 'bolt' },
+    },
+    {
+      label: 'Motor',
+      value: engineLabel(vehicle) ?? (/electric/i.test(vehicle.fuel_type ?? '') ? 'Eléctrico' : null),
+      icon: { ios: 'engine.combustion.fill', android: 'speed', web: 'speed' },
+    },
+    {
+      label: 'Transmisión',
+      value: transmissionLabel(vehicle.transmission),
+      icon: { ios: 'gearshape.fill', android: 'settings', web: 'settings' },
+    },
+    {
+      label: 'Tracción',
+      value: driveLabel(vehicle.drive_type),
+      icon: { ios: 'steeringwheel', android: 'tire_repair', web: 'tire_repair' },
+    },
+    {
+      label: 'Combustible',
+      value: fuelLabel(vehicle),
+      icon: { ios: 'fuelpump.fill', android: 'local_gas_station', web: 'local_gas_station' },
+    },
+    {
+      label: 'Carrocería',
+      value: bodyTypeLabel(vehicle),
+      icon: { ios: 'car.side.fill', android: 'directions_car', web: 'directions_car' },
+    },
+    {
+      label: 'Puertas',
+      value: vehicle.doors,
+      icon: { ios: 'door.left.hand.closed', android: 'sensor_door', web: 'sensor_door' },
+    },
+  ];
+  const items = all.filter((item) => item.value != null && item.value !== '');
+
+  return (
+    <View style={styles.specGrid}>
+      {items.map((item) => (
+        <ThemedView key={item.label} type="backgroundElement" style={[styles.specTile, elevation]}>
+          <View style={[styles.specIcon, { backgroundColor: theme.backgroundSelected }]}>
+            <Icon name={item.icon} size={16} color={theme.tint} />
+          </View>
+          <ThemedText type="smallBold" style={styles.specValue} numberOfLines={1}>
+            {item.value}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+            {item.label}
+          </ThemedText>
+        </ThemedView>
+      ))}
+    </View>
+  );
+}
+
+/** "8-Speed Automatic" → "Automática 8 vel."; "CVT" se queda igual. */
+function transmissionLabel(value: string | null) {
+  if (!value) return null;
+  const speeds = value.match(/(\d+)-speed/i)?.[1];
+  const suffix = speeds ? ` ${speeds} vel.` : '';
+  if (/cvt/i.test(value)) return 'CVT';
+  if (/dual-clutch|dct/i.test(value)) return `Doble embrague${suffix}`;
+  if (/manual/i.test(value)) return `Manual${suffix}`;
+  if (/automatic/i.test(value)) return `Automática${suffix}`;
+  return value;
+}
+
+/** "FWD/Front-Wheel Drive" → "Delantera". */
+function driveLabel(value: string | null) {
+  if (!value) return null;
+  if (/^fwd|front/i.test(value)) return 'Delantera';
+  if (/^rwd|rear/i.test(value)) return 'Trasera';
+  if (/^awd|all-wheel/i.test(value)) return 'Integral (AWD)';
+  if (/^4wd|4x4|4-wheel/i.test(value)) return '4x4';
+  return value;
 }
 
 function SaveButton({ vehicle }: { vehicle: Vehicle }) {
@@ -181,14 +419,18 @@ function SaveButton({ vehicle }: { vehicle: Vehicle }) {
 
   async function toggle() {
     if (!user) {
-      router.navigate('/profile');
+      router.dismissTo('/profile');
       return;
     }
+    if (isSaved) haptics.toggleOff();
+    else haptics.toggleOn();
     setBusy(true);
     try {
       if (isSaved) await unsaveVehicle(vehicle.id);
       else await saveVehicle(user.id, toSnapshot(vehicle));
       setOverride(!isSaved);
+    } catch {
+      haptics.error();
     } finally {
       setBusy(false);
     }
@@ -200,6 +442,7 @@ function SaveButton({ vehicle }: { vehicle: Vehicle }) {
       variant="secondary"
       title={isSaved ? 'Guardado ✓' : 'Guardar'}
       loading={busy || saved.loading}
+      haptic={!user}
       onPress={toggle}
     />
   );
@@ -231,34 +474,90 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     paddingTop: Spacing.three,
   },
-  heroImage: {
-    width: '100%',
-    height: 200,
-    marginBottom: Spacing.two,
+  heroFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '25%',
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
   },
-  actions: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
   flex: {
     flex: 1,
   },
   panel: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
+  },
+  eyebrow: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  price: {
+    fontFamily: FontFamily.headingXL,
   },
   spec: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: Spacing.three,
   },
+  // Llega a los bordes al deslizar y deja espacio a la sombra de las tarjetas
+  carouselScroll: {
+    marginHorizontal: -Spacing.three,
+    marginVertical: -Spacing.three,
+    flexGrow: 0,
+  },
   carousel: {
+    gap: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
+  },
+  actionBar: {
+    position: 'absolute',
+    left: Spacing.three,
+    right: Spacing.three,
+    flexDirection: 'row',
     gap: Spacing.two,
+    padding: Spacing.two,
+    borderRadius: Radius.pill,
+    overflow: 'hidden',
+  },
+  specGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  // Dos por fila: cada mosaico crece desde ~45 % y el gap completa el resto
+  specTile: {
+    flexGrow: 1,
+    flexBasis: '45%',
+    borderRadius: Radius.card,
+    padding: Spacing.three,
+    gap: Spacing.half,
+  },
+  specIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.inner,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.one,
+  },
+  specValue: {
+    fontFamily: FontFamily.heading,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  carouselSkeleton: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    overflow: 'hidden',
   },
 });

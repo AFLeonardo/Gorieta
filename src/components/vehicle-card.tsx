@@ -1,14 +1,22 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "expo-image";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import {
+  type GestureResponderEvent,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 
 import { StarRating } from "@/components/star-rating";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { FontFamily, Spacing } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
+import { Icon } from "@/components/ui/icon";
+import { ImageWithSkeleton } from "@/components/ui/skeleton";
+import { FontFamily, Radius, Spacing } from "@/constants/theme";
+import { useElevation, useTheme } from "@/hooks/use-theme";
+import { haptics } from "@/lib/haptics";
+import { useDensity, useMotion } from "@/lib/preferences";
+import { useVehicleImage } from "@/services/vehicle-images";
 import { type VehicleSnapshot } from "@/types/vehicle";
 
 const ON_IMAGE = "#F1F5F9";
@@ -22,6 +30,8 @@ type VehicleCardProps = {
   price?: number | null;
   /** Variante compacta para carruseles horizontales. */
   compact?: boolean;
+  /** Ancho fijo (carruseles); por defecto ocupa todo el ancho disponible. */
+  width?: number;
   /** Si se pasa, la tarjeta llama a esta función en vez de abrir la ficha del vehículo. */
   onPress?: () => void;
   /** Estado de guardado controlado desde fuera (opcional). */
@@ -40,38 +50,77 @@ export function VehicleCard({
   rank,
   price,
   compact,
+  width,
   onPress,
   saved,
   onToggleSave,
 }: VehicleCardProps) {
   const theme = useTheme();
+  const elevation = useElevation();
   const [localSaved, setLocalSaved] = useState(false);
+  const { cardPressScale } = useMotion();
+  const density = useDensity();
+  // Foto real si ya la conocemos (caché de MarketCheck); si no carga, la ilustración
+  const photo = useVehicleImage(vehicle);
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const imageUri = photoFailed ? vehicle.image_url : photo;
   const isSaved = saved ?? localSaved;
 
-  const toggleSave = () => {
+  const toggleSave = (e: GestureResponderEvent) => {
+    // Evita que el toque también abra la ficha del vehículo (el botón está dentro del Link).
+    e.stopPropagation();
+    e.preventDefault();
     const next = !isSaved;
+    // Sin onToggleSave nadie más da respuesta háptica (useSavedVehicles ya la da)
+    if (!onToggleSave) {
+      if (next) haptics.toggleOn();
+      else haptics.toggleOff();
+    }
     setLocalSaved(next);
     onToggleSave?.(next);
   };
 
-  const card = (
+  const open = () => {
+    haptics.tap();
+    if (onPress) onPress();
+    else router.push(`/vehicle/${vehicle.vehicle_id}`);
+  };
+
+  return (
     <Pressable
-      onPress={onPress}
+      accessibilityRole={onPress ? "button" : "link"}
+      accessibilityLabel={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+      onPress={open}
       style={({ pressed }) => [
         compact && styles.compact,
+        width !== undefined && { width },
         pressed && styles.pressed,
+        pressed && { transform: [{ scale: cardPressScale }] },
       ]}
     >
       <ThemedView
         type="backgroundSelected"
-        style={[styles.card, compact ? styles.cardCompact : styles.cardRegular]}
+        style={[
+          styles.card,
+          elevation,
+          {
+            height: compact
+              ? density.vehicleCardCompactHeight
+              : density.vehicleCardHeight,
+          },
+        ]}
       >
         {/* Foto a toda la tarjeta */}
-        <Image
-          source={vehicle.image_url}
+        <ImageWithSkeleton
+          key={imageUri}
+          source={imageUri}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           transition={200}
+          skeletonColor={theme.border}
+          onError={() => {
+            if (imageUri !== vehicle.image_url) setPhotoFailed(true);
+          }}
         />
 
         {/* Degradado inferior hacia la foto */}
@@ -95,7 +144,7 @@ export function VehicleCard({
             {
               backgroundColor: isSaved
                 ? theme.accent
-                : "rgba(11, 19, 43, 0.55)",
+                : "rgba(0, 0, 0, 0.45)",
             },
           ]}
           accessibilityRole="button"
@@ -103,8 +152,12 @@ export function VehicleCard({
             isSaved ? "Quitar de guardados" : "Guardar vehículo"
           }
         >
-          <Ionicons
-            name={isSaved ? "bookmark" : "bookmark-outline"}
+          <Icon
+            name={
+              isSaved
+                ? { ios: "bookmark.fill", android: "bookmark", web: "bookmark" }
+                : { ios: "bookmark", android: "bookmark_border", web: "bookmark_border" }
+            }
             size={16}
             color={ON_IMAGE}
           />
@@ -150,13 +203,6 @@ export function VehicleCard({
       </ThemedView>
     </Pressable>
   );
-
-  if (onPress) return card;
-  return (
-    <Link href={`/vehicle/${vehicle.vehicle_id}`} asChild>
-      {card}
-    </Link>
-  );
 }
 
 const styles = StyleSheet.create({
@@ -167,15 +213,9 @@ const styles = StyleSheet.create({
     width: 220,
   },
   card: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     overflow: "hidden",
     justifyContent: "flex-end",
-  },
-  cardRegular: {
-    height: 260,
-  },
-  cardCompact: {
-    height: 250,
   },
   gradient: {
     position: "absolute",
@@ -184,7 +224,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: "70%",
     backgroundImage:
-      "linear-gradient(180deg, rgba(11, 19, 43, 0) 0%, rgba(11, 19, 43, 0.75) 45%, rgba(11, 19, 43, 0.96) 100%)",
+      "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.55) 45%, rgba(0, 0, 0, 0.88) 100%)",
   },
   rankBadge: {
     position: "absolute",
