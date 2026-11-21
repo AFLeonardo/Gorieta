@@ -48,6 +48,7 @@ export default function SavedScreen() {
         error={saved.error}
         onRetry={saved.reload}
         empty={saved.data?.length === 0}
+        emptyIcon={{ ios: 'bookmark', android: 'bookmark_border', web: 'bookmark_border' }}
         emptyText="Aún no guardas vehículos. Usa el botón Guardar en la ficha de un vehículo."
       />
       {saved.data?.map((v) => (

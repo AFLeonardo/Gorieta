@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useDensity, useMotion } from '@/lib/preferences';
 
@@ -122,7 +122,7 @@ export function SkeletonList({ count = 3, children }: { count?: number; children
 }
 
 /** Forma de `VehicleCard`: foto completa con el texto abajo. */
-export function VehicleCardSkeleton({ compact }: { compact?: boolean }) {
+export function VehicleCardSkeleton({ compact, width }: { compact?: boolean; width?: number }) {
   const density = useDensity();
   return (
     <ThemedView
@@ -130,6 +130,7 @@ export function VehicleCardSkeleton({ compact }: { compact?: boolean }) {
       style={[
         styles.vehicleCard,
         compact && styles.vehicleCardCompact,
+        width !== undefined && { width },
         { height: compact ? density.vehicleCardCompactHeight : density.vehicleCardHeight },
       ]}>
       <Skeleton width="30%" height={12} />
@@ -180,11 +181,8 @@ export function ReviewCardSkeleton() {
 
 /** Panel con filas etiqueta / valor (precio, especificaciones). */
 export function PanelSkeleton({ rows = 3 }: { rows?: number }) {
-  const theme = useTheme();
   return (
-    <ThemedView
-      type="backgroundElement"
-      style={[styles.panel, styles.accentPanel, { borderLeftColor: theme.accent }]}>
+    <ThemedView type="backgroundElement" style={styles.panel}>
       {Array.from({ length: rows }, (_, i) => (
         <View key={i} style={styles.spaceBetween}>
           <Skeleton width="35%" height={14} />
@@ -233,7 +231,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   vehicleCard: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     justifyContent: 'flex-end',
     padding: Spacing.three,
     gap: Spacing.two,
@@ -242,7 +240,7 @@ const styles = StyleSheet.create({
     width: 220,
   },
   showcase: {
-    borderRadius: Spacing.five,
+    borderRadius: Radius.card,
     overflow: 'hidden',
     paddingBottom: Spacing.three,
     gap: Spacing.three,
@@ -257,12 +255,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
   },
   panel: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.three,
-  },
-  accentPanel: {
-    borderLeftWidth: 4,
   },
   detail: {
     gap: Spacing.four,

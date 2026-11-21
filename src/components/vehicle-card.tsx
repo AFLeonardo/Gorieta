@@ -1,4 +1,3 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -11,9 +10,10 @@ import {
 import { StarRating } from "@/components/star-rating";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Icon } from "@/components/ui/icon";
 import { ImageWithSkeleton } from "@/components/ui/skeleton";
-import { FontFamily, Spacing } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
+import { FontFamily, Radius, Spacing } from "@/constants/theme";
+import { useElevation, useTheme } from "@/hooks/use-theme";
 import { haptics } from "@/lib/haptics";
 import { useDensity, useMotion } from "@/lib/preferences";
 import { useVehicleImage } from "@/services/vehicle-images";
@@ -30,6 +30,8 @@ type VehicleCardProps = {
   price?: number | null;
   /** Variante compacta para carruseles horizontales. */
   compact?: boolean;
+  /** Ancho fijo (carruseles); por defecto ocupa todo el ancho disponible. */
+  width?: number;
   /** Si se pasa, la tarjeta llama a esta función en vez de abrir la ficha del vehículo. */
   onPress?: () => void;
   /** Estado de guardado controlado desde fuera (opcional). */
@@ -48,11 +50,13 @@ export function VehicleCard({
   rank,
   price,
   compact,
+  width,
   onPress,
   saved,
   onToggleSave,
 }: VehicleCardProps) {
   const theme = useTheme();
+  const elevation = useElevation();
   const [localSaved, setLocalSaved] = useState(false);
   const { cardPressScale } = useMotion();
   const density = useDensity();
@@ -89,6 +93,7 @@ export function VehicleCard({
       onPress={open}
       style={({ pressed }) => [
         compact && styles.compact,
+        width !== undefined && { width },
         pressed && styles.pressed,
         pressed && { transform: [{ scale: cardPressScale }] },
       ]}
@@ -97,6 +102,7 @@ export function VehicleCard({
         type="backgroundSelected"
         style={[
           styles.card,
+          elevation,
           {
             height: compact
               ? density.vehicleCardCompactHeight
@@ -138,7 +144,7 @@ export function VehicleCard({
             {
               backgroundColor: isSaved
                 ? theme.accent
-                : "rgba(11, 19, 43, 0.55)",
+                : "rgba(0, 0, 0, 0.45)",
             },
           ]}
           accessibilityRole="button"
@@ -146,8 +152,12 @@ export function VehicleCard({
             isSaved ? "Quitar de guardados" : "Guardar vehículo"
           }
         >
-          <Ionicons
-            name={isSaved ? "bookmark" : "bookmark-outline"}
+          <Icon
+            name={
+              isSaved
+                ? { ios: "bookmark.fill", android: "bookmark", web: "bookmark" }
+                : { ios: "bookmark", android: "bookmark_border", web: "bookmark_border" }
+            }
             size={16}
             color={ON_IMAGE}
           />
@@ -203,7 +213,7 @@ const styles = StyleSheet.create({
     width: 220,
   },
   card: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.card,
     overflow: "hidden",
     justifyContent: "flex-end",
   },
@@ -214,7 +224,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: "70%",
     backgroundImage:
-      "linear-gradient(180deg, rgba(11, 19, 43, 0) 0%, rgba(11, 19, 43, 0.75) 45%, rgba(11, 19, 43, 0.96) 100%)",
+      "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.55) 45%, rgba(0, 0, 0, 0.88) 100%)",
   },
   rankBadge: {
     position: "absolute",

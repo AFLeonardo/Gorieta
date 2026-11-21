@@ -27,7 +27,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
-import { useGradients, useTheme } from "@/hooks/use-theme";
+import { useTheme } from "@/hooks/use-theme";
 import { useDensity, useMotion } from "@/lib/preferences";
 
 type ScreenProps = PropsWithChildren<{
@@ -38,8 +38,10 @@ type ScreenProps = PropsWithChildren<{
   withTabBar?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
-  /** Contenido a todo lo ancho, pegado arriba (sin márgenes). Desactiva el degradado del fondo. */
+  /** Contenido a todo lo ancho, pegado arriba (sin márgenes). */
   hero?: ReactNode;
+  /** Espacio extra al final para que una barra flotante no tape el último contenido. */
+  bottomInset?: number;
 }>;
 
 /** Contenedor desplazable con márgenes seguros, usado por todas las pantallas. */
@@ -51,11 +53,11 @@ export function Screen({
   refreshing,
   onRefresh,
   hero,
+  bottomInset = 0,
   children,
 }: ScreenProps) {
   const safeAreaInsets = useSafeAreaInsets();
   const theme = useTheme();
-  const gradients = useGradients();
   const pullRefreshing = usePullRefreshing(refreshing);
   const riseStyle = useRiseOnFocus(withTabBar);
   const density = useDensity();
@@ -64,12 +66,15 @@ export function Screen({
   useResetScrollOnFocus(scrollRef, withTabBar);
 
   const paddingBottom =
-    safeAreaInsets.bottom + (withTabBar ? BottomTabInset : 0) + Spacing.three;
+    safeAreaInsets.bottom +
+    (withTabBar ? BottomTabInset : 0) +
+    Spacing.three +
+    bottomInset;
 
   const contentPlatformStyle = Platform.select({
     web: {
       paddingTop: Spacing.six + Spacing.three,
-      paddingBottom: Spacing.four,
+      paddingBottom: Spacing.four + bottomInset,
     },
     default: {
       paddingTop: safeAreaInsets.top,
@@ -84,7 +89,6 @@ export function Screen({
       style={{
         flex: 1,
         backgroundColor: theme.background,
-        backgroundImage: hero ? undefined : gradients.screen,
       }}
       contentInsetAdjustmentBehavior="never"
       keyboardShouldPersistTaps="handled"
@@ -216,8 +220,8 @@ const styles = StyleSheet.create({
   // Título grande al estilo de las apps nativas: color puro (ver Colors.*.title) y letras
   // un poco más juntas, que a este tamaño se ven más firmes.
   title: {
-    fontSize: 40,
-    lineHeight: 44,
+    fontSize: 34,
+    lineHeight: 40,
     fontWeight: 800,
     letterSpacing: -0.8,
   },

@@ -1,7 +1,9 @@
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ReviewCard } from '@/components/review-card';
 import { Screen } from '@/components/screen';
@@ -10,6 +12,7 @@ import { StarRating } from '@/components/star-rating';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import {
   ImageWithSkeleton,
   ReviewCardSkeleton,
@@ -20,12 +23,12 @@ import {
 } from '@/components/ui/skeleton';
 import { StateView } from '@/components/ui/state-view';
 import { VehicleCard } from '@/components/vehicle-card';
-import { FontFamily, Spacing } from '@/constants/theme';
+import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { bodyTypeLabel, fuelLabel } from '@/constants/vehicle-types';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
-import { useTheme } from '@/hooks/use-theme';
+import { useElevation, useTheme } from '@/hooks/use-theme';
 import { haptics } from '@/lib/haptics';
 import { getSimilarVehicles, getVehicle } from '@/services/carvector';
 import { getMarketData } from '@/services/marketcheck';
@@ -77,14 +80,16 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
 
   const ownReview = user ? reviews.data?.find((r) => r.user_id === user.id) : undefined;
   const theme = useTheme();
-  // Paneles con la barra naranja de las reseñas
-  const panelStyle = [styles.panel, { borderLeftColor: theme.accent }];
+  const elevation = useElevation();
+  const panelStyle = [styles.panel, elevation];
   // Etiqueta corta en naranja, como la marca en las tarjetas del Top: "SEDÁN · GASOLINA"
   const eyebrow = [bodyTypeLabel(vehicle), fuelLabel(vehicle)].filter(Boolean).join(' · ');
 
   return (
+    <View style={styles.flex}>
     <Screen
       withTabBar={false}
+      bottomInset={ACTION_BAR_SPACE}
       hero={
         <HeroImage
           photo={market.data?.photo}
@@ -110,26 +115,6 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
             </ThemedText>
           </View>
         )}
-      </View>
-
-      <View style={styles.actions}>
-        <SaveButton vehicle={vehicle} />
-        <Button
-          style={styles.flex}
-          title={ownReview ? 'Editar mi reseña' : 'Escribir reseña'}
-          onPress={() =>
-            ownReview
-              ? router.push({
-                  pathname: '/review/[id]',
-                  params: { id: ownReview.id },
-                })
-              : // dismissTo regresa a las pestañas ya abiertas; navigate apilaría otra copia
-                router.dismissTo({
-                  pathname: '/contribute',
-                  params: { vehicleId: vehicle.id },
-                })
-          }
-        />
       </View>
 
       <Section title="Precio de mercado">
@@ -163,15 +148,7 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
       </Section>
 
       <Section title="Especificaciones">
-        <ThemedView type="backgroundElement" style={panelStyle}>
-          <Spec label="Motor" value={engineLabel(vehicle)} />
-          <Spec label="Potencia" value={vehicle.horsepower && `${vehicle.horsepower} hp`} />
-          <Spec label="Transmisión" value={vehicle.transmission} />
-          <Spec label="Tracción" value={vehicle.drive_type} />
-          <Spec label="Combustible" value={vehicle.fuel_type} />
-          <Spec label="Carrocería" value={vehicle.body_class} />
-          <Spec label="Puertas" value={vehicle.doors} />
-        </ThemedView>
+        <SpecGrid vehicle={vehicle} />
       </Section>
 
       <Section title="Fallas comunes">
@@ -190,6 +167,7 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={styles.carouselScroll}
             contentContainerStyle={styles.carousel}>
             {similar.data.map((v) => (
               <VehicleCard key={v.id} vehicle={toSnapshot(v)} compact />
@@ -223,6 +201,7 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
           error={reviews.error}
           onRetry={reviews.reload}
           empty={reviews.data?.length === 0}
+          emptyIcon={{ ios: 'text.bubble', android: 'rate_review', web: 'rate_review' }}
           emptyText="Este vehículo aún no tiene reseñas."
         />
         {reviews.data?.map((r) => (
@@ -237,6 +216,28 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
         ))}
       </Section>
     </Screen>
+
+      {/* Acciones principales siempre a la mano, flotando sobre el contenido */}
+      <ActionBar>
+        <SaveButton vehicle={vehicle} />
+        <Button
+          style={styles.flex}
+          title={ownReview ? 'Editar mi reseña' : 'Escribir reseña'}
+          onPress={() =>
+            ownReview
+              ? router.push({
+                  pathname: '/review/[id]',
+                  params: { id: ownReview.id },
+                })
+              : // dismissTo regresa a las pestañas ya abiertas; navigate apilaría otra copia
+                router.dismissTo({
+                  pathname: '/contribute',
+                  params: { vehicleId: vehicle.id },
+                })
+          }
+        />
+      </ActionBar>
+    </View>
   );
 }
 
@@ -288,6 +289,123 @@ function HeroImage({ photo, fallback, pending }: HeroImageProps) {
       />
     </View>
   );
+}
+
+/** Alto de la barra flotante + su separación: el contenido deja este espacio al final. */
+const ACTION_BAR_SPACE = 48 + Spacing.two * 2 + Spacing.three;
+
+/**
+ * Barra de acciones flotante. En iOS 26+ usa el vidrio nativo (Liquid Glass); en el resto,
+ * una superficie sólida con la misma elevación que las tarjetas.
+ */
+function ActionBar({ children }: { children: React.ReactNode }) {
+  const insets = useSafeAreaInsets();
+  const theme = useTheme();
+  const elevation = useElevation();
+  const glass = isLiquidGlassAvailable();
+
+  return (
+    <GlassView
+      glassEffectStyle="regular"
+      isInteractive
+      style={[
+        styles.actionBar,
+        { bottom: Math.max(insets.bottom, Spacing.three) },
+        !glass && [elevation, { backgroundColor: theme.backgroundElement }],
+      ]}>
+      {children}
+    </GlassView>
+  );
+}
+
+type SpecItem = {
+  label: string;
+  value: string | number | null | undefined;
+  icon: React.ComponentProps<typeof Icon>['name'];
+};
+
+/** Especificaciones en mosaicos de 2 columnas: ícono, valor grande y etiqueta. */
+function SpecGrid({ vehicle }: { vehicle: Vehicle }) {
+  const theme = useTheme();
+  const elevation = useElevation();
+  const all: SpecItem[] = [
+    {
+      label: 'Potencia',
+      value: vehicle.horsepower && `${vehicle.horsepower} hp`,
+      icon: { ios: 'bolt.fill', android: 'bolt', web: 'bolt' },
+    },
+    {
+      label: 'Motor',
+      value: engineLabel(vehicle) ?? (/electric/i.test(vehicle.fuel_type ?? '') ? 'Eléctrico' : null),
+      icon: { ios: 'engine.combustion.fill', android: 'speed', web: 'speed' },
+    },
+    {
+      label: 'Transmisión',
+      value: transmissionLabel(vehicle.transmission),
+      icon: { ios: 'gearshape.fill', android: 'settings', web: 'settings' },
+    },
+    {
+      label: 'Tracción',
+      value: driveLabel(vehicle.drive_type),
+      icon: { ios: 'steeringwheel', android: 'tire_repair', web: 'tire_repair' },
+    },
+    {
+      label: 'Combustible',
+      value: fuelLabel(vehicle),
+      icon: { ios: 'fuelpump.fill', android: 'local_gas_station', web: 'local_gas_station' },
+    },
+    {
+      label: 'Carrocería',
+      value: bodyTypeLabel(vehicle),
+      icon: { ios: 'car.side.fill', android: 'directions_car', web: 'directions_car' },
+    },
+    {
+      label: 'Puertas',
+      value: vehicle.doors,
+      icon: { ios: 'door.left.hand.closed', android: 'sensor_door', web: 'sensor_door' },
+    },
+  ];
+  const items = all.filter((item) => item.value != null && item.value !== '');
+
+  return (
+    <View style={styles.specGrid}>
+      {items.map((item) => (
+        <ThemedView key={item.label} type="backgroundElement" style={[styles.specTile, elevation]}>
+          <View style={[styles.specIcon, { backgroundColor: theme.backgroundSelected }]}>
+            <Icon name={item.icon} size={16} color={theme.tint} />
+          </View>
+          <ThemedText type="smallBold" style={styles.specValue} numberOfLines={1}>
+            {item.value}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+            {item.label}
+          </ThemedText>
+        </ThemedView>
+      ))}
+    </View>
+  );
+}
+
+/** "8-Speed Automatic" → "Automática 8 vel."; "CVT" se queda igual. */
+function transmissionLabel(value: string | null) {
+  if (!value) return null;
+  const speeds = value.match(/(\d+)-speed/i)?.[1];
+  const suffix = speeds ? ` ${speeds} vel.` : '';
+  if (/cvt/i.test(value)) return 'CVT';
+  if (/dual-clutch|dct/i.test(value)) return `Doble embrague${suffix}`;
+  if (/manual/i.test(value)) return `Manual${suffix}`;
+  if (/automatic/i.test(value)) return `Automática${suffix}`;
+  return value;
+}
+
+/** "FWD/Front-Wheel Drive" → "Delantera". */
+function driveLabel(value: string | null) {
+  if (!value) return null;
+  if (/^fwd|front/i.test(value)) return 'Delantera';
+  if (/^rwd|rear/i.test(value)) return 'Trasera';
+  if (/^awd|all-wheel/i.test(value)) return 'Integral (AWD)';
+  if (/^4wd|4x4|4-wheel/i.test(value)) return '4x4';
+  return value;
 }
 
 function SaveButton({ vehicle }: { vehicle: Vehicle }) {
@@ -368,16 +486,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
   },
-  actions: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-  },
   flex: {
     flex: 1,
   },
   panel: {
-    borderRadius: Spacing.three,
-    borderLeftWidth: 4,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },
@@ -395,8 +508,52 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.three,
   },
+  // Llega a los bordes al deslizar y deja espacio a la sombra de las tarjetas
+  carouselScroll: {
+    marginHorizontal: -Spacing.three,
+    marginVertical: -Spacing.three,
+    flexGrow: 0,
+  },
   carousel: {
+    gap: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three,
+  },
+  actionBar: {
+    position: 'absolute',
+    left: Spacing.three,
+    right: Spacing.three,
+    flexDirection: 'row',
     gap: Spacing.two,
+    padding: Spacing.two,
+    borderRadius: Radius.pill,
+    overflow: 'hidden',
+  },
+  specGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  // Dos por fila: cada mosaico crece desde ~45 % y el gap completa el resto
+  specTile: {
+    flexGrow: 1,
+    flexBasis: '45%',
+    borderRadius: Radius.card,
+    padding: Spacing.three,
+    gap: Spacing.half,
+  },
+  specIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.inner,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.one,
+  },
+  specValue: {
+    fontFamily: FontFamily.heading,
+    fontSize: 16,
+    lineHeight: 22,
   },
   carouselSkeleton: {
     flexDirection: 'row',

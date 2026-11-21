@@ -1,28 +1,40 @@
 import type { PropsWithChildren } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
-import { Spacing } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
+import { FontFamily, Spacing } from "@/constants/theme";
+import { haptics } from "@/lib/haptics";
 import { useDensity } from "@/lib/preferences";
 
-export function Section({
-  title,
-  children,
-}: PropsWithChildren<{ title: string }>) {
-  const theme = useTheme();
+type SectionProps = PropsWithChildren<{
+  title: string;
+  /** Enlace opcional a la derecha del título (p. ej. "Ver todo"). */
+  action?: { label: string; onPress: () => void };
+}>;
+
+export function Section({ title, action, children }: SectionProps) {
   const density = useDensity();
   return (
-    <View style={[styles.section, { gap: density.space(Spacing.two) }]}>
+    <View style={[styles.section, { gap: density.space(Spacing.three) }]}>
       <View style={styles.header}>
-        <View style={[styles.accent, { backgroundColor: theme.accent }]} />
-        <ThemedText
-          type="smallBold"
-          themeColor="textSecondary"
-          style={styles.title}
-        >
+        <ThemedText style={styles.title} numberOfLines={1}>
           {title}
         </ThemedText>
+        {action && (
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={Spacing.two}
+            onPress={() => {
+              haptics.tap();
+              action.onPress();
+            }}
+            style={({ pressed }) => pressed && styles.pressed}
+          >
+            <ThemedText type="smallBold" themeColor="tint">
+              {action.label}
+            </ThemedText>
+          </Pressable>
+        )}
       </View>
       {children}
     </View>
@@ -31,21 +43,22 @@ export function Section({
 
 const styles = StyleSheet.create({
   section: {
-    gap: Spacing.two,
+    gap: Spacing.three,
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "baseline",
+    justifyContent: "space-between",
     gap: Spacing.two,
   },
-  accent: {
-    width: 4,
-    height: 16,
-    borderRadius: 2,
-  },
   title: {
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    fontSize: 17,
+    flexShrink: 1,
+    fontFamily: FontFamily.heading,
+    fontSize: 20,
+    lineHeight: 26,
+    letterSpacing: -0.3,
+  },
+  pressed: {
+    opacity: 0.6,
   },
 });

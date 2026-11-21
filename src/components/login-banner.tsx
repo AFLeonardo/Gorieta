@@ -4,7 +4,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown, FadeOutDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { Icon } from "@/components/ui/icon";
+import { BottomTabInset, FontFamily, Radius, Spacing } from "@/constants/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { haptics } from "@/lib/haptics";
 
@@ -39,7 +40,11 @@ export function LoginBanner({
             setVisible(false);
           }}
         >
-          <Text style={styles.closeText}>✕</Text>
+          <Icon
+            name={{ ios: "xmark", android: "close", web: "close" }}
+            size={16}
+            color="rgba(255, 255, 255, 0.8)"
+          />
         </Pressable>
 
         <Text style={styles.text}>{message}</Text>
@@ -68,14 +73,20 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   card: {
-    backgroundColor: "rgba(0, 0, 0, 0.82)",
-    borderRadius: 16,
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    borderRadius: Radius.card,
     paddingVertical: 14,
     paddingHorizontal: 16,
     paddingRight: 44,
   },
-  closeButton: { position: "absolute", top: 10, right: 12, zIndex: 1 },
-  closeText: { color: "#fff", fontSize: 18, fontWeight: "600" },
-  text: { color: "#fff", fontSize: 14, marginBottom: 8 },
-  link: { color: "#4da3ff", fontSize: 15, fontWeight: "600" },
+  closeButton: { position: "absolute", top: 14, right: 14, zIndex: 1 },
+  text: {
+    color: "#fff",
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  // Azul cobalto aclarado: legible sobre el fondo negro del aviso
+  link: { color: "#8FB0FF", fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
 });

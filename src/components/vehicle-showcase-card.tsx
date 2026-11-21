@@ -8,11 +8,11 @@ import { ThemedView } from "@/components/themed-view";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { ImageWithSkeleton } from "@/components/ui/skeleton";
-import { FontFamily, Spacing } from "@/constants/theme";
+import { FontFamily, Radius, Spacing } from "@/constants/theme";
 import { haptics } from "@/lib/haptics";
 import { useDensity, useMotion } from "@/lib/preferences";
 import { bodyTypeLabel, fuelLabel } from "@/constants/vehicle-types";
-import { useGradients, useTheme } from "@/hooks/use-theme";
+import { useElevation, useGradients, useTheme } from "@/hooks/use-theme";
 import { useVehicleImage } from "@/services/vehicle-images";
 import type { Vehicle } from "@/types/vehicle";
 
@@ -34,6 +34,7 @@ export function VehicleShowcaseCard({
   const gradients = useGradients();
   const type = bodyTypeLabel(vehicle);
   const density = useDensity();
+  const elevation = useElevation();
   const { cardPressScale } = useMotion();
   const photo = useVehicleImage(vehicle);
   const [photoFailed, setPhotoFailed] = useState(false);
@@ -74,7 +75,7 @@ export function VehicleShowcaseCard({
   return (
     <ThemedView
       type="backgroundElement"
-      style={[styles.card, { gap: density.space(Spacing.three) }]}
+      style={[styles.card, elevation, { gap: density.space(Spacing.three) }]}
     >
       <Pressable
         accessibilityRole="link"
@@ -209,7 +210,7 @@ function engineLabel(v: Vehicle) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: Spacing.five,
+    borderRadius: Radius.card,
     overflow: "hidden",
     paddingBottom: Spacing.three,
     gap: Spacing.three,

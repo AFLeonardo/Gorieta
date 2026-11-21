@@ -7,7 +7,7 @@ import { CameraCapture, type CapturedPicture } from '@/components/camera-capture
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { haptics } from '@/lib/haptics';
 import {
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   thumb: {
     width: 96,
     height: 96,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.inner,
   },
   processing: {
     alignItems: 'center',

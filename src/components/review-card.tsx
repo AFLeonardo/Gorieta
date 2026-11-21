@@ -8,9 +8,9 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { ImageWithSkeleton } from '@/components/ui/skeleton';
-import { FontFamily, Spacing } from '@/constants/theme';
+import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
-import { useTheme } from '@/hooks/use-theme';
+import { useElevation, useTheme } from '@/hooks/use-theme';
 import { confirmDestructive } from '@/lib/confirm';
 import { haptics } from '@/lib/haptics';
 import { useDensity } from '@/lib/preferences';
@@ -32,6 +32,7 @@ export function ReviewCard({ review, showVehicle, onDeleted }: ReviewCardProps) 
   const { user } = useAuth();
   const theme = useTheme();
   const density = useDensity();
+  const elevation = useElevation();
   const isOwn = !!user && user.id === review.user_id;
   const username = review.profiles?.username ?? 'Usuario';
 
@@ -47,8 +48,8 @@ export function ReviewCard({ review, showVehicle, onDeleted }: ReviewCardProps) 
       type="backgroundElement"
       style={[
         styles.card,
+        elevation,
         {
-          borderLeftColor: theme.accent,
           padding: density.space(Spacing.three),
           gap: density.space(Spacing.two),
         },
@@ -210,8 +211,7 @@ function OwnerActions({ review, onDeleted }: { review: Review; onDeleted?: () =>
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: Spacing.three,
-    borderLeftWidth: 4,
+    borderRadius: Radius.card,
     padding: Spacing.three,
     gap: Spacing.two,
   },

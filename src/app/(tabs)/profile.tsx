@@ -11,11 +11,11 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 import { ReviewCardSkeleton, SkeletonList } from '@/components/ui/skeleton';
 import { StateView } from '@/components/ui/state-view';
 import { TextField } from '@/components/ui/text-field';
-import { FontFamily, Spacing } from '@/constants/theme';
+import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
-import { useTheme } from '@/hooks/use-theme';
+import { useElevation, useTheme } from '@/hooks/use-theme';
 import { haptics } from '@/lib/haptics';
 import {
   setDensityLevel,
@@ -71,6 +71,7 @@ function Account({ userId, email }: { userId: string; email?: string }) {
           error={reviews.error}
           onRetry={reviews.reload}
           empty={reviews.data?.length === 0}
+          emptyIcon={{ ios: 'square.and.pencil', android: 'edit_note', web: 'edit_note' }}
           emptyText="Todavía no escribes reseñas."
         />
         {reviews.data?.map((r) => (
@@ -104,7 +105,7 @@ const MOTION_HINTS: Record<MotionLevel, string> = {
 };
 
 function MotionPreference() {
-  const theme = useTheme();
+  const elevation = useElevation();
   const { motion } = usePreferences();
   // El sistema manda: con "Reducir movimiento" activado no se anima nada
   const systemReduced = useMotion().level === 'off' && motion !== 'off';
@@ -112,7 +113,7 @@ function MotionPreference() {
   return (
     <ThemedView
       type="backgroundElement"
-      style={[styles.preferenceColumn, { borderLeftColor: theme.accent }]}>
+      style={[styles.preferenceColumn, elevation]}>
       <View style={styles.preferenceHeader}>
         <ThemedText type="smallBold">Intensidad de movimiento</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
@@ -144,13 +145,13 @@ const DENSITY_HINTS: Record<DensityLevel, string> = {
 };
 
 function DensityPreference() {
-  const theme = useTheme();
+  const elevation = useElevation();
   const { density } = usePreferences();
 
   return (
     <ThemedView
       type="backgroundElement"
-      style={[styles.preferenceColumn, { borderLeftColor: theme.accent }]}>
+      style={[styles.preferenceColumn, elevation]}>
       <View style={styles.preferenceHeader}>
         <ThemedText type="smallBold">Densidad visual</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
@@ -169,12 +170,13 @@ function DensityPreference() {
 
 function SoundsToggle() {
   const theme = useTheme();
+  const elevation = useElevation();
   const [enabled, setEnabled] = useState(areSoundsEnabled);
 
   return (
     <ThemedView
       type="backgroundElement"
-      style={[styles.preference, { borderLeftColor: theme.accent }]}>
+      style={[styles.preference, elevation]}>
       <View style={styles.preferenceText}>
         <ThemedText type="smallBold">Sonidos</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
@@ -287,8 +289,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    borderRadius: Spacing.three,
-    borderLeftWidth: 4,
+    borderRadius: Radius.card,
     padding: Spacing.three,
   },
   // En columna, sin flex: 1 (que en un contenedor de alto automático puede colapsar)
@@ -297,8 +298,7 @@ const styles = StyleSheet.create({
   },
   preferenceColumn: {
     gap: Spacing.three,
-    borderRadius: Spacing.three,
-    borderLeftWidth: 4,
+    borderRadius: Radius.card,
     padding: Spacing.three,
   },
   avatar: {

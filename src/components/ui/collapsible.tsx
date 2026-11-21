@@ -5,7 +5,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { haptics } from '@/lib/haptics';
 
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   },
   content: {
     marginTop: Spacing.three,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.inner,
     marginLeft: Spacing.four,
     padding: Spacing.four,
   },

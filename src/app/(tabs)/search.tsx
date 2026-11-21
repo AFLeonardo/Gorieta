@@ -117,6 +117,7 @@ export default function SearchScreen() {
       {!submitted ? (
         <StateView
           empty
+          emptyIcon={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
           emptyText="Busca por marca y modelo, y filtra por tipo de auto: SUV, sedán, pickup, eléctrico…"
         />
       ) : results.loading ? (
