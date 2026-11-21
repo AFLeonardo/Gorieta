@@ -133,17 +133,17 @@ export function VehicleCardSkeleton({ compact }: { compact?: boolean }) {
 export function ShowcaseCardSkeleton() {
   return (
     <ThemedView type="backgroundElement" style={styles.showcase}>
-      <Skeleton height={200} radius={Spacing.four} />
+      <Skeleton height={230} radius={0} />
       <View style={styles.showcaseBody}>
         <Skeleton width="30%" height={14} />
         <Skeleton width="70%" height={30} />
       </View>
-      <View style={styles.row}>
+      <View style={styles.showcaseRow}>
         <Skeleton height={56} style={styles.flex} />
         <Skeleton height={56} style={styles.flex} />
         <Skeleton height={56} style={styles.flex} />
       </View>
-      <View style={styles.row}>
+      <View style={styles.showcaseRow}>
         <Skeleton height={48} radius={999} style={styles.flex} />
         <Skeleton height={48} radius={999} style={styles.flex} />
       </View>
@@ -169,8 +169,11 @@ export function ReviewCardSkeleton() {
 
 /** Panel con filas etiqueta / valor (precio, especificaciones). */
 export function PanelSkeleton({ rows = 3 }: { rows?: number }) {
+  const theme = useTheme();
   return (
-    <ThemedView type="backgroundElement" style={styles.panel}>
+    <ThemedView
+      type="backgroundElement"
+      style={[styles.panel, styles.accentPanel, { borderLeftColor: theme.accent }]}>
       {Array.from({ length: rows }, (_, i) => (
         <View key={i} style={styles.spaceBetween}>
           <Skeleton width="35%" height={14} />
@@ -233,18 +236,26 @@ const styles = StyleSheet.create({
   },
   showcase: {
     borderRadius: Spacing.five,
-    padding: Spacing.two,
+    overflow: 'hidden',
     paddingBottom: Spacing.three,
     gap: Spacing.three,
   },
   showcaseBody: {
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: Spacing.four,
     gap: Spacing.two,
+  },
+  showcaseRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
   },
   panel: {
     borderRadius: Spacing.three,
     padding: Spacing.three,
     gap: Spacing.three,
+  },
+  accentPanel: {
+    borderLeftWidth: 4,
   },
   detail: {
     gap: Spacing.four,

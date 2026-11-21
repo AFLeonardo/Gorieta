@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ReviewCardSkeleton, SkeletonList } from '@/components/ui/skeleton';
 import { StateView } from '@/components/ui/state-view';
 import { TextField } from '@/components/ui/text-field';
-import { Spacing } from '@/constants/theme';
+import { FontFamily, Spacing } from '@/constants/theme';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
@@ -37,11 +37,18 @@ function Account({ userId, email }: { userId: string; email?: string }) {
   }, [userId]);
   const reviews = useAsync(() => getUserReviews(userId), [userId]);
   useRefreshOnFocus(reviews.reload);
+  const theme = useTheme();
+  const initial = (profile.data?.username ?? email ?? '?').charAt(0).toUpperCase();
 
   return (
     <Screen
       title={profile.data?.username ?? 'Mi perfil'}
       subtitle={email}
+      headerRight={
+        <View style={[styles.avatar, { backgroundColor: theme.accent }]}>
+          <ThemedText style={styles.avatarText}>{initial}</ThemedText>
+        </View>
+      }
       refreshing={reviews.loading}
       onRefresh={reviews.reload}>
       <Section title={`Mis reseñas${reviews.data ? ` (${reviews.data.length})` : ''}`}>
@@ -76,7 +83,9 @@ function SoundsToggle() {
   const [enabled, setEnabled] = useState(areSoundsEnabled);
 
   return (
-    <ThemedView type="backgroundElement" style={styles.preference}>
+    <ThemedView
+      type="backgroundElement"
+      style={[styles.preference, { borderLeftColor: theme.accent }]}>
       <View style={styles.preferenceText}>
         <ThemedText type="smallBold">Sonidos</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
@@ -190,7 +199,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.three,
     borderRadius: Spacing.three,
+    borderLeftWidth: 4,
     padding: Spacing.three,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontFamily: FontFamily.headingXL,
+    fontSize: 22,
+    lineHeight: 28,
   },
   preferenceText: {
     flex: 1,

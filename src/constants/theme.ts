@@ -12,6 +12,7 @@ import { Platform } from "react-native";
 export const Colors = {
   light: {
     text: "#1E293B",
+    title: "#000000", // negro puro: títulos grandes de cada pantalla
     background: "#F3F6FA", // gris azulado muy suave (sin blanco puro)
     backgroundElement: "#FBFCFE", // tarjetas / superficies
     backgroundSelected: "#E3E9F2",
@@ -27,6 +28,7 @@ export const Colors = {
   },
   dark: {
     text: "#F1F5F9",
+    title: "#FFFFFF", // blanco puro: títulos grandes de cada pantalla
     background: "#0B132B", // azul medianoche
     backgroundElement: "#1C2541", // azul pizarra: mayor elevación
     backgroundSelected: "#2A3558",
@@ -58,6 +60,16 @@ export const Gradients = {
     primary: "linear-gradient(90deg, #7AA2EE 0%, #9DB8EE 100%)",
     accent: "linear-gradient(90deg, #FF8533 0%, #FFA05C 100%)",
   },
+} as const;
+
+/**
+ * Fondo sólido del splash: el color con el que empieza el degradado de las pantallas
+ * (`Gradients.*.screen`). Si cambias estos valores, actualiza también `expo-splash-screen`
+ * en app.json (backgroundColor y dark.backgroundColor) para que el splash nativo coincida.
+ */
+export const SplashColors = {
+  light: "#FB923C", // naranja
+  dark: "#6D28D9", // morado
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;

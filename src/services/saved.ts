@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { bestVehicleImage } from '@/services/vehicle-images';
 import type { VehicleSnapshot } from '@/types/vehicle';
 
 export async function getSavedVehicles() {
@@ -29,7 +30,7 @@ export async function saveVehicle(userId: string, vehicle: VehicleSnapshot) {
     make: vehicle.make,
     model: vehicle.model,
     trim: vehicle.trim,
-    image_url: vehicle.image_url,
+    image_url: bestVehicleImage(vehicle),
   });
   if (error) throw error;
 }

@@ -1,4 +1,6 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
@@ -6,10 +8,11 @@ import { ThemedView } from "@/components/themed-view";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { ImageWithSkeleton } from "@/components/ui/skeleton";
-import { Spacing } from "@/constants/theme";
+import { FontFamily, Spacing } from "@/constants/theme";
 import { haptics } from "@/lib/haptics";
 import { bodyTypeLabel, fuelLabel } from "@/constants/vehicle-types";
 import { useGradients, useTheme } from "@/hooks/use-theme";
+import { useVehicleImage } from "@/services/vehicle-images";
 import type { Vehicle } from "@/types/vehicle";
 
 type VehicleShowcaseCardProps = {
@@ -29,6 +32,14 @@ export function VehicleShowcaseCard({
   const theme = useTheme();
   const gradients = useGradients();
   const type = bodyTypeLabel(vehicle);
+  const photo = useVehicleImage(vehicle);
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const imageUri = photoFailed ? vehicle.image_url : photo;
+  // Las fotos llenan todo el ancho; solo las ilustraciones de CarVector (fondo
+  // transparente) se dibujan completas y centradas para no recortarlas.
+  const isIllustration =
+    imageUri === vehicle.image_url && vehicle.image_type === "illustration";
+  const isPhoto = imageUri !== vehicle.image_url;
   const openDetails = () => router.push(`/vehicle/${vehicle.id}`);
 
   const stats = [
@@ -70,10 +81,20 @@ export function VehicleShowcaseCard({
       >
         <View style={[styles.imageWrap, { backgroundImage: gradients.image }]}>
           <ImageWithSkeleton
-            source={vehicle.image_url}
-            style={styles.image}
-            contentFit="contain"
+            key={imageUri}
+            source={imageUri}
+            style={isIllustration ? styles.image : StyleSheet.absoluteFill}
+            contentFit={isIllustration ? "contain" : "cover"}
+            onError={() => {
+              if (isPhoto) setPhotoFailed(true);
+            }}
             transition={200}
+          />
+          {/* La foto se funde con el fondo de la tarjeta, hacia la información */}
+          <LinearGradient
+            colors={[`${theme.backgroundElement}00`, theme.backgroundElement]}
+            style={styles.imageFade}
+            pointerEvents="none"
           />
           {type && (
             <View
@@ -89,17 +110,20 @@ export function VehicleShowcaseCard({
             style={[
               styles.badge,
               styles.yearBadge,
-              { backgroundColor: theme.tint },
+              { backgroundColor: theme.accent },
             ]}
           >
-            <ThemedText type="smallBold" style={{ color: theme.onTint }}>
+            <ThemedText type="smallBold" style={styles.yearText}>
               {vehicle.year}
             </ThemedText>
           </View>
         </View>
 
         <View style={styles.body}>
-          <ThemedText type="smallBold" themeColor="tint">
+          <ThemedText
+            type="smallBold"
+            style={[styles.make, { color: theme.accentSecondary }]}
+          >
             {vehicle.make}
           </ThemedText>
           <ThemedText style={styles.model} numberOfLines={2}>
@@ -174,13 +198,19 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.three,
     gap: Spacing.three,
   },
+  imageFade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "35%",
+  },
   pressed: {
     opacity: 0.8,
   },
+  // A todo lo ancho, sin margen: la tarjeta ya redondea las esquinas de arriba
   imageWrap: {
-    height: 200,
-    margin: Spacing.two,
-    borderRadius: Spacing.four,
+    height: 230,
     overflow: "hidden",
     justifyContent: "center",
   },
@@ -199,6 +229,14 @@ const styles = StyleSheet.create({
   yearBadge: {
     left: undefined,
     right: Spacing.three,
+  },
+  yearText: {
+    color: "#FFFFFF",
+    fontFamily: FontFamily.heading,
+  },
+  make: {
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
   body: {
     paddingHorizontal: Spacing.four,

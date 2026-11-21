@@ -15,6 +15,7 @@ import { ImageWithSkeleton } from "@/components/ui/skeleton";
 import { FontFamily, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { haptics } from "@/lib/haptics";
+import { useVehicleImage } from "@/services/vehicle-images";
 import { type VehicleSnapshot } from "@/types/vehicle";
 
 const ON_IMAGE = "#F1F5F9";
@@ -52,6 +53,10 @@ export function VehicleCard({
 }: VehicleCardProps) {
   const theme = useTheme();
   const [localSaved, setLocalSaved] = useState(false);
+  // Foto real si ya la conocemos (caché de MarketCheck); si no carga, la ilustración
+  const photo = useVehicleImage(vehicle);
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const imageUri = photoFailed ? vehicle.image_url : photo;
   const isSaved = saved ?? localSaved;
 
   const toggleSave = (e: GestureResponderEvent) => {
@@ -90,11 +95,15 @@ export function VehicleCard({
       >
         {/* Foto a toda la tarjeta */}
         <ImageWithSkeleton
-          source={vehicle.image_url}
+          key={imageUri}
+          source={imageUri}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           transition={200}
           skeletonColor={theme.border}
+          onError={() => {
+            if (imageUri !== vehicle.image_url) setPhotoFailed(true);
+          }}
         />
 
         {/* Degradado inferior hacia la foto */}

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { removeReviewPhotos, uploadReviewPhotos, type LocalPhoto } from '@/services/review-photos';
+import { bestVehicleImage } from '@/services/vehicle-images';
 import type { Review, VehicleRating, VehicleSnapshot } from '@/types/vehicle';
 
 const REVIEW_COLUMNS = '*, profiles(username)';
@@ -86,7 +87,12 @@ export async function createReview(userId: string, review: NewReview, photos: Lo
   const photoPaths = await uploadReviewPhotos(userId, photos);
   const { error } = await supabase
     .from('reviews')
-    .insert({ ...review, user_id: userId, photos: photoPaths });
+    .insert({
+      ...review,
+      image_url: bestVehicleImage(review),
+      user_id: userId,
+      photos: photoPaths,
+    });
   if (error) {
     // La reseña no se creó: no dejes fotos huérfanas en Storage
     await removeReviewPhotos(photoPaths);

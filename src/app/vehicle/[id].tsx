@@ -20,14 +20,15 @@ import {
 } from '@/components/ui/skeleton';
 import { StateView } from '@/components/ui/state-view';
 import { VehicleCard } from '@/components/vehicle-card';
-import { Spacing } from '@/constants/theme';
+import { FontFamily, Spacing } from '@/constants/theme';
+import { bodyTypeLabel, fuelLabel } from '@/constants/vehicle-types';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useTheme } from '@/hooks/use-theme';
 import { haptics } from '@/lib/haptics';
 import { getSimilarVehicles, getVehicle } from '@/services/carvector';
-import { getMarketPrice } from '@/services/marketcheck';
+import { getMarketData } from '@/services/marketcheck';
 import { getVehicleRating, getVehicleReviews } from '@/services/reviews';
 import { isVehicleSaved, saveVehicle, unsaveVehicle } from '@/services/saved';
 import { toSnapshot, vehicleName, type Vehicle } from '@/types/vehicle';
@@ -64,7 +65,9 @@ export default function VehicleScreen() {
 
 function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
   const { user } = useAuth();
-  const price = useAsync(() => getMarketPrice(vehicle), [vehicle.id]);
+  // Una sola petición trae el precio de mercado y una foto real del modelo
+  const market = useAsync(() => getMarketData(vehicle), [vehicle.id]);
+  const price = market.data?.price;
   const rating = useAsync(() => getVehicleRating(vehicle.id), [vehicle.id]);
   const reviews = useAsync(() => getVehicleReviews(vehicle.id), [vehicle.id]);
   const similar = useAsync(() => getSimilarVehicles(vehicle), [vehicle.id]);
@@ -73,12 +76,30 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
   useRefreshOnFocus(reviews.reload);
 
   const ownReview = user ? reviews.data?.find((r) => r.user_id === user.id) : undefined;
+  const theme = useTheme();
+  // Paneles con la barra naranja de las reseñas
+  const panelStyle = [styles.panel, { borderLeftColor: theme.accent }];
+  // Etiqueta corta en naranja, como la marca en las tarjetas del Top: "SEDÁN · GASOLINA"
+  const eyebrow = [bodyTypeLabel(vehicle), fuelLabel(vehicle)].filter(Boolean).join(' · ');
 
   return (
-    <Screen withTabBar={false} hero={<HeroImage uri={vehicle.image_url} />}>
+    <Screen
+      withTabBar={false}
+      hero={
+        <HeroImage
+          photo={market.data?.photo}
+          fallback={vehicle.image_url}
+          pending={market.loading && !market.data}
+        />
+      }>
       <Stack.Screen options={{ title: `${vehicle.make} ${vehicle.model}` }} />
 
       <View style={styles.hero}>
+        {eyebrow ? (
+          <ThemedText type="smallBold" style={[styles.eyebrow, { color: theme.accentSecondary }]}>
+            {eyebrow}
+          </ThemedText>
+        ) : null}
         <ThemedText type="subtitle">{vehicleName(vehicle)}</ThemedText>
         {vehicle.trim && <ThemedText themeColor="textSecondary">{vehicle.trim}</ThemedText>}
         {rating.data && (
@@ -112,26 +133,28 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
       </View>
 
       <Section title="Precio de mercado">
-        <ThemedView type="backgroundElement" style={styles.panel}>
-          {price.data ? (
+        <ThemedView type="backgroundElement" style={panelStyle}>
+          {price ? (
             <>
-              <ThemedText type="subtitle">{currency.format(price.data.median)}</ThemedText>
+              <ThemedText type="subtitle" style={[styles.price, { color: theme.accent }]}>
+                {currency.format(price.median)}
+              </ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                Mediana de {price.data.count} anuncios activos · rango{' '}
-                {currency.format(price.data.min)} – {currency.format(price.data.max)}
+                Mediana de {price.count} anuncios activos · rango{' '}
+                {currency.format(price.min)} – {currency.format(price.max)}
               </ThemedText>
             </>
           ) : (
             <StateView
-              loading={price.loading}
+              loading={market.loading}
               skeleton={
                 <>
                   <Skeleton width="45%" height={28} />
                   <Skeleton width="80%" height={12} />
                 </>
               }
-              error={price.error}
-              onRetry={price.reload}
+              error={market.error}
+              onRetry={market.reload}
               empty
               emptyText="No hay anuncios activos para calcular un precio."
             />
@@ -140,7 +163,7 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
       </Section>
 
       <Section title="Especificaciones">
-        <ThemedView type="backgroundElement" style={styles.panel}>
+        <ThemedView type="backgroundElement" style={panelStyle}>
           <Spec label="Motor" value={engineLabel(vehicle)} />
           <Spec label="Potencia" value={vehicle.horsepower && `${vehicle.horsepower} hp`} />
           <Spec label="Transmisión" value={vehicle.transmission} />
@@ -152,7 +175,7 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
       </Section>
 
       <Section title="Fallas comunes">
-        <ThemedView type="backgroundElement" style={styles.panel}>
+        <ThemedView type="backgroundElement" style={panelStyle}>
           <Spec label="Quejas registradas" value={vehicle.complaint_count ?? 0} />
           <Spec label="Boletines técnicos" value={vehicle.tsb_count ?? 0} />
           <Spec label="Investigaciones" value={vehicle.investigation_count ?? 0} />
@@ -221,19 +244,37 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
  * Imagen a todo lo ancho, como máximo 1/3 de la altura de la pantalla. El último
  * cuarto se funde con el fondo mediante un degradado.
  */
-function HeroImage({ uri }: { uri: Vehicle['image_url'] }) {
+type HeroImageProps = {
+  /** Foto real de MarketCheck (si la hay). */
+  photo?: string | null;
+  /** Ilustración de CarVector: se usa si no hay foto o si la foto no carga. */
+  fallback: Vehicle['image_url'];
+  /** Aún esperando a MarketCheck: muestra el skeleton en vez de la ilustración. */
+  pending: boolean;
+};
+
+function HeroImage({ photo, fallback, pending }: HeroImageProps) {
   const theme = useTheme();
   const { width, height: windowHeight } = useWindowDimensions();
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+  // Las fotos vienen de servidores de concesionarios: si un enlace murió, usa la ilustración
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const uri = photo && !photoFailed ? photo : fallback;
 
   const maxHeight = windowHeight / 3;
   const height = aspectRatio ? Math.min(width / aspectRatio, maxHeight) : maxHeight;
 
+  if (pending) return <Skeleton height={maxHeight} radius={0} />;
+
   return (
     <View style={{ height }}>
       <ImageWithSkeleton
+        key={uri}
         source={uri}
         style={StyleSheet.absoluteFill}
+        onError={() => {
+          if (uri === photo) setPhotoFailed(true);
+        }}
         contentFit="cover"
         transition={200}
         onLoad={({ source }) => {
@@ -336,8 +377,18 @@ const styles = StyleSheet.create({
   },
   panel: {
     borderRadius: Spacing.three,
+    borderLeftWidth: 4,
     padding: Spacing.three,
     gap: Spacing.two,
+  },
+  eyebrow: {
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  price: {
+    fontFamily: FontFamily.headingXL,
   },
   spec: {
     flexDirection: 'row',
