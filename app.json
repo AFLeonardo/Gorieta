@@ -17,7 +17,11 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
+      "package": "com.leonardorrateams.Gorieta"
     },
     "web": {
       "output": "server",
@@ -50,11 +54,24 @@
           "cameraPermission": "Permite a $(PRODUCT_NAME) usar la cámara para tomar fotos de tu vehículo en tus reseñas.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-font",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "7a0b01d5-94ab-428d-b2c9-a8ff3fb9db3a"
+      }
     }
   }
 }
