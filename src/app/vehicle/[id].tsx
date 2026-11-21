@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { ReviewCard } from '@/components/review-card';
 import { Screen } from '@/components/screen';
@@ -16,6 +17,7 @@ import { Spacing } from '@/constants/theme';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
+import { useTheme } from '@/hooks/use-theme';
 import { getSimilarVehicles, getVehicle } from '@/services/carvector';
 import { getMarketPrice } from '@/services/marketcheck';
 import { getVehicleRating, getVehicleReviews } from '@/services/reviews';
@@ -56,16 +58,10 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
   const userHasReview = !!user && !!reviews.data?.some((r) => r.user_id === user.id);
 
   return (
-    <Screen withTabBar={false}>
+    <Screen withTabBar={false} hero={<HeroImage uri={vehicle.image_url} />}>
       <Stack.Screen options={{ title: `${vehicle.make} ${vehicle.model}` }} />
 
       <View style={styles.hero}>
-        <Image
-          source={vehicle.image_url}
-          style={styles.heroImage}
-          contentFit="contain"
-          transition={200}
-        />
         <ThemedText type="subtitle">{vehicleName(vehicle)}</ThemedText>
         {vehicle.trim && <ThemedText themeColor="textSecondary">{vehicle.trim}</ThemedText>}
         {rating.data && (
@@ -170,6 +166,38 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
   );
 }
 
+/**
+ * Imagen a todo lo ancho, como máximo 1/3 de la altura de la pantalla. El último
+ * cuarto se funde con el fondo mediante un degradado.
+ */
+function HeroImage({ uri }: { uri: Vehicle['image_url'] }) {
+  const theme = useTheme();
+  const { width, height: windowHeight } = useWindowDimensions();
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+
+  const maxHeight = windowHeight / 3;
+  const height = aspectRatio ? Math.min(width / aspectRatio, maxHeight) : maxHeight;
+
+  return (
+    <View style={{ height }}>
+      <Image
+        source={uri}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        transition={200}
+        onLoad={({ source }) => {
+          if (source.width && source.height) setAspectRatio(source.width / source.height);
+        }}
+      />
+      <LinearGradient
+        colors={[`${theme.background}00`, theme.background]}
+        style={styles.heroFade}
+        pointerEvents="none"
+      />
+    </View>
+  );
+}
+
 function SaveButton({ vehicle }: { vehicle: Vehicle }) {
   const { user } = useAuth();
   const saved = useAsync(() => isVehicleSaved(vehicle.id), [vehicle.id, user?.id], {
@@ -231,10 +259,12 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     paddingTop: Spacing.three,
   },
-  heroImage: {
-    width: '100%',
-    height: 200,
-    marginBottom: Spacing.two,
+  heroFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '25%',
   },
   ratingRow: {
     flexDirection: 'row',

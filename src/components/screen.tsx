@@ -20,6 +20,8 @@ type ScreenProps = PropsWithChildren<{
   withTabBar?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** Contenido a todo lo ancho, pegado arriba (sin márgenes). Desactiva el degradado del fondo. */
+  hero?: ReactNode;
 }>;
 
 /** Contenedor desplazable con márgenes seguros, usado por todas las pantallas. */
@@ -30,6 +32,7 @@ export function Screen({
   withTabBar = true,
   refreshing,
   onRefresh,
+  hero,
   children,
 }: ScreenProps) {
   const safeAreaInsets = useSafeAreaInsets();
@@ -49,45 +52,49 @@ export function Screen({
       paddingBottom,
     },
   });
+  const heroStyle = hero ? { paddingTop: 0 } : null;
 
   return (
     <ScrollView
       style={{
         flex: 1,
         backgroundColor: theme.background,
-        backgroundImage: gradients.screen,
+        backgroundImage: hero ? undefined : gradients.screen,
       }}
       contentInsetAdjustmentBehavior="never"
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}
+      contentContainerStyle={[contentPlatformStyle, heroStyle]}
       refreshControl={
         onRefresh ? (
           <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} />
         ) : undefined
       }
     >
-      <View style={styles.container}>
-        {title && (
-          <View style={styles.header}>
-            <View style={styles.headerText}>
-              <ThemedText type="title" style={styles.title}>
-                {title}
-              </ThemedText>
-              {subtitle && (
-                <ThemedText themeColor="textSecondary">{subtitle}</ThemedText>
-              )}
+      {hero}
+      <View style={styles.row}>
+        <View style={styles.container}>
+          {title && (
+            <View style={styles.header}>
+              <View style={styles.headerText}>
+                <ThemedText type="title" style={styles.title}>
+                  {title}
+                </ThemedText>
+                {subtitle && (
+                  <ThemedText themeColor="textSecondary">{subtitle}</ThemedText>
+                )}
+              </View>
+              {headerRight}
             </View>
-            {headerRight}
-          </View>
-        )}
-        {children}
+          )}
+          {children}
+        </View>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  contentContainer: {
+  row: {
     flexDirection: "row",
     justifyContent: "center",
   },

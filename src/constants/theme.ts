@@ -45,15 +45,15 @@ export const Colors = {
 /** Degradados (sintaxis CSS para la prop de estilo `backgroundImage`). */
 export const Gradients = {
   light: {
-    // Naranja de arriba hacia abajo
-    screen: "linear-gradient(180deg, #FB923C 0%, #FDBA74 35%, #FFEDD5 75%, #FFF7ED 100%)",
+    // Pequeño degradado naranja en la parte superior que se funde con el fondo
+    screen: "linear-gradient(180deg, #FB923C 0%, #FDBA74 7%, #FFEDD5 16%, #F3F6FA 26%)",
     image: "linear-gradient(160deg, #E4EAF3 0%, #FBFCFE 100%)",
     primary: "linear-gradient(90deg, #102A43 0%, #1E3A8A 100%)",
     accent: "linear-gradient(90deg, #F97316 0%, #FB923C 100%)",
   },
   dark: {
-    // Morado de arriba hacia abajo
-    screen: "linear-gradient(180deg, #6D28D9 0%, #4C1D95 35%, #2E1065 70%, #1A0B3D 100%)",
+    // Pequeño degradado morado en la parte superior que se funde con el fondo
+    screen: "linear-gradient(180deg, #6D28D9 0%, #4C1D95 7%, #2E1065 16%, #0B132B 26%)",
     image: "linear-gradient(160deg, #1F2B52 0%, #101A36 100%)",
     primary: "linear-gradient(90deg, #7AA2EE 0%, #9DB8EE 100%)",
     accent: "linear-gradient(90deg, #FF8533 0%, #FFA05C 100%)",
