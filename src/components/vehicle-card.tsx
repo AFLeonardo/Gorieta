@@ -2,7 +2,12 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import {
+  type GestureResponderEvent,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 
 import { StarRating } from "@/components/star-rating";
 import { ThemedText } from "@/components/themed-text";
@@ -48,7 +53,10 @@ export function VehicleCard({
   const [localSaved, setLocalSaved] = useState(false);
   const isSaved = saved ?? localSaved;
 
-  const toggleSave = () => {
+  const toggleSave = (e: GestureResponderEvent) => {
+    // Evita que el toque también abra la ficha del vehículo (el botón está dentro del Link).
+    e.stopPropagation();
+    e.preventDefault();
     const next = !isSaved;
     setLocalSaved(next);
     onToggleSave?.(next);

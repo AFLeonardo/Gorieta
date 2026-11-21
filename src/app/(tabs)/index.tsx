@@ -6,15 +6,19 @@ import { StateView } from "@/components/ui/state-view";
 import { VehicleCard } from "@/components/vehicle-card";
 import { useAsync } from "@/hooks/use-async";
 import { useRefreshOnFocus } from "@/hooks/use-refresh-on-focus";
+import { useSavedVehicles } from "@/hooks/use-saved-vehicles";
 import { getRecentReviews, getTopVehicles } from "@/services/reviews";
 import { View } from "react-native";
 
 export default function HomeScreen() {
   const top = useAsync(() => getTopVehicles(10), []);
   const recent = useAsync(() => getRecentReviews(5), []);
+  const saved = useSavedVehicles();
 
   useRefreshOnFocus(top.reload);
   useRefreshOnFocus(recent.reload);
+  // Si se quitó un guardado desde otra pestaña, el ícono se actualiza al volver.
+  useRefreshOnFocus(saved.reload);
 
   return (
     <View style={{ flex: 1 }}>
@@ -25,6 +29,7 @@ export default function HomeScreen() {
         onRefresh={() => {
           top.reload();
           recent.reload();
+          saved.reload();
         }}
       >
         <Section title="Top vehículos">
@@ -38,6 +43,8 @@ export default function HomeScreen() {
                   avg: Number(v.avg_rating),
                   count: Number(v.review_count),
                 }}
+                saved={saved.isSaved(v.vehicle_id)}
+                onToggleSave={() => saved.toggle(v)}
               />
             ))
           ) : (

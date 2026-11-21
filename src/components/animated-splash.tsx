@@ -1,7 +1,9 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
-import { Animated, StyleSheet, useColorScheme } from "react-native";
+import { Animated, StyleSheet } from "react-native";
+
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 const PALETTES = {
   light: ["#102A43", "#7C2D12", "#F97316"], // atardecer

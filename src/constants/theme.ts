@@ -15,7 +15,7 @@ export const Colors = {
     background: "#F3F6FA", // gris azulado muy suave (sin blanco puro)
     backgroundElement: "#FBFCFE", // tarjetas / superficies
     backgroundSelected: "#E3E9F2",
-    textSecondary: "#5B6B80",
+    textSecondary: "#475569", // un poco más oscuro para leerse bien sobre el degradado naranja
     tint: "#15375A", // azul marino: elementos interactivos activos
     onTint: "#F3F6FA",
     star: "#F2B01E",
@@ -45,13 +45,15 @@ export const Colors = {
 /** Degradados (sintaxis CSS para la prop de estilo `backgroundImage`). */
 export const Gradients = {
   light: {
-    screen: "linear-gradient(180deg, #DCE5F0 0%, #F3F6FA 40%)",
+    // Naranja de arriba hacia abajo
+    screen: "linear-gradient(180deg, #FB923C 0%, #FDBA74 35%, #FFEDD5 75%, #FFF7ED 100%)",
     image: "linear-gradient(160deg, #E4EAF3 0%, #FBFCFE 100%)",
     primary: "linear-gradient(90deg, #102A43 0%, #1E3A8A 100%)",
     accent: "linear-gradient(90deg, #F97316 0%, #FB923C 100%)",
   },
   dark: {
-    screen: "linear-gradient(180deg, #16224A 0%, #0B132B 45%)",
+    // Morado de arriba hacia abajo
+    screen: "linear-gradient(180deg, #6D28D9 0%, #4C1D95 35%, #2E1065 70%, #1A0B3D 100%)",
     image: "linear-gradient(160deg, #1F2B52 0%, #101A36 100%)",
     primary: "linear-gradient(90deg, #7AA2EE 0%, #9DB8EE 100%)",
     accent: "linear-gradient(90deg, #FF8533 0%, #FFA05C 100%)",
