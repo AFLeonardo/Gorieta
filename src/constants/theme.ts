@@ -1,6 +1,8 @@
 /**
  * Colores, degradados, fuentes y espaciado de la app.
  * Los colores están definidos para modo claro y oscuro.
+ *
+ * Paleta: azul marino + naranja (coherente con el splash de atardecer/anochecer).
  */
 
 import "@/global.css";
@@ -9,46 +11,50 @@ import { Platform } from "react-native";
 
 export const Colors = {
   light: {
-    text: "#1F2933",
-    background: "#F6F7F3",
-    backgroundElement: "#FFFFFF",
-    backgroundSelected: "#E6EBE4",
-    textSecondary: "#68736F",
-    tint: "#0F766E",
-    onTint: "#ffffff",
-    star: "#F5A524",
+    text: "#1E293B",
+    background: "#F3F6FA", // gris azulado muy suave (sin blanco puro)
+    backgroundElement: "#FBFCFE", // tarjetas / superficies
+    backgroundSelected: "#E3E9F2",
+    textSecondary: "#5B6B80",
+    tint: "#15375A", // azul marino: elementos interactivos activos
+    onTint: "#F3F6FA",
+    star: "#F2B01E",
     danger: "#D93036",
-    border: "#E1E5DF",
-    accent: "#F28C28", // naranja: interacciones y destacados
-    brand: "#123F3A", // verde profundo: identidad
+    border: "#D9E1EC",
+    accent: "#F97316", // naranja: interacciones y destacados
+    accentSecondary: "#FB923C",
+    brand: "#102A43", // azul profundo: identidad
   },
   dark: {
-    text: "#F1F4F0",
-    background: "#0B1A18",
-    backgroundElement: "#122624",
-    backgroundSelected: "#1B3733",
-    textSecondary: "#9DB0AA",
-    tint: "#2DB3A3",
-    onTint: "#06201C",
-    star: "#F5B83D",
-    danger: "#FF6369",
-    border: "#24403B",
-    accent: "#F5A04A",
-    brand: "#7FD1C7",
+    text: "#F1F5F9",
+    background: "#0B132B", // azul medianoche
+    backgroundElement: "#1C2541", // azul pizarra: mayor elevación
+    backgroundSelected: "#2A3558",
+    textSecondary: "#9AA8C0",
+    tint: "#7AA2EE", // azul claro: legible sobre fondo oscuro
+    onTint: "#0B132B",
+    star: "#FFC24D",
+    danger: "#FF6B6B",
+    border: "#2B3658",
+    accent: "#FF8533",
+    accentSecondary: "#FFA05C",
+    brand: "#A9C0F0",
   },
 } as const;
 
 /** Degradados (sintaxis CSS para la prop de estilo `backgroundImage`). */
 export const Gradients = {
   light: {
-    screen: "linear-gradient(180deg, #E3EBE2 0%, #F6F7F3 40%)",
-    image: "linear-gradient(160deg, #E6EDE6 0%, #FAFBF8 100%)",
-    primary: "linear-gradient(90deg, #0F766E 0%, #12877D 100%)",
+    screen: "linear-gradient(180deg, #DCE5F0 0%, #F3F6FA 40%)",
+    image: "linear-gradient(160deg, #E4EAF3 0%, #FBFCFE 100%)",
+    primary: "linear-gradient(90deg, #102A43 0%, #1E3A8A 100%)",
+    accent: "linear-gradient(90deg, #F97316 0%, #FB923C 100%)",
   },
   dark: {
-    screen: "linear-gradient(180deg, #14332F 0%, #0B1A18 45%)",
-    image: "linear-gradient(160deg, #1B3A36 0%, #102321 100%)",
-    primary: "linear-gradient(90deg, #0F766E 0%, #12877D 100%)",
+    screen: "linear-gradient(180deg, #16224A 0%, #0B132B 45%)",
+    image: "linear-gradient(160deg, #1F2B52 0%, #101A36 100%)",
+    primary: "linear-gradient(90deg, #7AA2EE 0%, #9DB8EE 100%)",
+    accent: "linear-gradient(90deg, #FF8533 0%, #FFA05C 100%)",
   },
 } as const;
 

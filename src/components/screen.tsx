@@ -1,10 +1,16 @@
-import type { PropsWithChildren, ReactNode } from 'react';
-import { Platform, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { PropsWithChildren, ReactNode } from "react";
+import {
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useGradients, useTheme } from '@/hooks/use-theme';
+import { ThemedText } from "@/components/themed-text";
+import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
+import { useGradients, useTheme } from "@/hooks/use-theme";
 
 type ScreenProps = PropsWithChildren<{
   title?: string;
@@ -29,34 +35,37 @@ export function Screen({
   const safeAreaInsets = useSafeAreaInsets();
   const theme = useTheme();
   const gradients = useGradients();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + (withTabBar ? BottomTabInset : 0) + Spacing.three,
-  };
+
+  const paddingBottom =
+    safeAreaInsets.bottom + (withTabBar ? BottomTabInset : 0) + Spacing.three;
 
   const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingBottom: insets.bottom,
-    },
     web: {
       paddingTop: Spacing.six + Spacing.three,
       paddingBottom: Spacing.four,
+    },
+    default: {
+      paddingTop: safeAreaInsets.top,
+      paddingBottom,
     },
   });
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: theme.background, backgroundImage: gradients.screen }}
-      contentInset={insets}
-      contentInsetAdjustmentBehavior="automatic"
+      style={{
+        flex: 1,
+        backgroundColor: theme.background,
+        backgroundImage: gradients.screen,
+      }}
+      contentInsetAdjustmentBehavior="never"
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}
       refreshControl={
         onRefresh ? (
           <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} />
         ) : undefined
-      }>
+      }
+    >
       <View style={styles.container}>
         {title && (
           <View style={styles.header}>
@@ -64,7 +73,9 @@ export function Screen({
               <ThemedText type="title" style={styles.title}>
                 {title}
               </ThemedText>
-              {subtitle && <ThemedText themeColor="textSecondary">{subtitle}</ThemedText>}
+              {subtitle && (
+                <ThemedText themeColor="textSecondary">{subtitle}</ThemedText>
+              )}
             </View>
             {headerRight}
           </View>
@@ -77,8 +88,8 @@ export function Screen({
 
 const styles = StyleSheet.create({
   contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
   },
   container: {
     maxWidth: MaxContentWidth,
@@ -88,8 +99,8 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.two,
     paddingTop: Spacing.three,
   },
@@ -97,7 +108,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 36,
+    fontSize: 40,
     lineHeight: 44,
     fontWeight: 800,
   },
