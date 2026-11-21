@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 import { confirmDestructive } from '@/lib/confirm';
 import { haptics } from '@/lib/haptics';
+import { useDensity } from '@/lib/preferences';
 import { reviewPhotoUrl } from '@/services/review-photos';
 import { deleteReview } from '@/services/reviews';
 import type { Review } from '@/types/vehicle';
@@ -30,6 +31,7 @@ const dateFormat = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' });
 export function ReviewCard({ review, showVehicle, onDeleted }: ReviewCardProps) {
   const { user } = useAuth();
   const theme = useTheme();
+  const density = useDensity();
   const isOwn = !!user && user.id === review.user_id;
   const username = review.profiles?.username ?? 'Usuario';
 
@@ -43,7 +45,14 @@ export function ReviewCard({ review, showVehicle, onDeleted }: ReviewCardProps) 
   return (
     <ThemedView
       type="backgroundElement"
-      style={[styles.card, { borderLeftColor: theme.accent }]}>
+      style={[
+        styles.card,
+        {
+          borderLeftColor: theme.accent,
+          padding: density.space(Spacing.three),
+          gap: density.space(Spacing.two),
+        },
+      ]}>
       {showVehicle ? (
         <Pressable
           accessibilityRole="link"

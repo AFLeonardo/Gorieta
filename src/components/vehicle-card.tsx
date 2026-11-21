@@ -15,6 +15,7 @@ import { ImageWithSkeleton } from "@/components/ui/skeleton";
 import { FontFamily, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { haptics } from "@/lib/haptics";
+import { useDensity, useMotion } from "@/lib/preferences";
 import { useVehicleImage } from "@/services/vehicle-images";
 import { type VehicleSnapshot } from "@/types/vehicle";
 
@@ -53,6 +54,8 @@ export function VehicleCard({
 }: VehicleCardProps) {
   const theme = useTheme();
   const [localSaved, setLocalSaved] = useState(false);
+  const { cardPressScale } = useMotion();
+  const density = useDensity();
   // Foto real si ya la conocemos (caché de MarketCheck); si no carga, la ilustración
   const photo = useVehicleImage(vehicle);
   const [photoFailed, setPhotoFailed] = useState(false);
@@ -87,11 +90,19 @@ export function VehicleCard({
       style={({ pressed }) => [
         compact && styles.compact,
         pressed && styles.pressed,
+        pressed && { transform: [{ scale: cardPressScale }] },
       ]}
     >
       <ThemedView
         type="backgroundSelected"
-        style={[styles.card, compact ? styles.cardCompact : styles.cardRegular]}
+        style={[
+          styles.card,
+          {
+            height: compact
+              ? density.vehicleCardCompactHeight
+              : density.vehicleCardHeight,
+          },
+        ]}
       >
         {/* Foto a toda la tarjeta */}
         <ImageWithSkeleton
@@ -187,7 +198,6 @@ export function VehicleCard({
 const styles = StyleSheet.create({
   pressed: {
     opacity: 0.85,
-    transform: [{ scale: 0.98 }],
   },
   compact: {
     width: 220,
@@ -196,12 +206,6 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     overflow: "hidden",
     justifyContent: "flex-end",
-  },
-  cardRegular: {
-    height: 260,
-  },
-  cardCompact: {
-    height: 250,
   },
   gradient: {
     position: "absolute",

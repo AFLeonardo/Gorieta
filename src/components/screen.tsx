@@ -18,9 +18,9 @@ import {
 import Animated, {
   Easing,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withSequence,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,6 +28,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import { useGradients, useTheme } from "@/hooks/use-theme";
+import { useDensity, useMotion } from "@/lib/preferences";
 
 type ScreenProps = PropsWithChildren<{
   title?: string;
@@ -57,6 +58,8 @@ export function Screen({
   const gradients = useGradients();
   const pullRefreshing = usePullRefreshing(refreshing);
   const riseStyle = useRiseOnFocus(withTabBar);
+  const density = useDensity();
+  const densityStyle = { gap: density.space(Spacing.four) };
   const scrollRef = useRef<ScrollViewInstance>(null);
   useResetScrollOnFocus(scrollRef, withTabBar);
 
@@ -100,7 +103,7 @@ export function Screen({
     >
       {hero}
       <View style={styles.row}>
-        <Animated.View style={[styles.container, riseStyle]}>
+        <Animated.View style={[styles.container, densityStyle, riseStyle]}>
           {title && (
             <View style={styles.header}>
               <View style={styles.headerText}>
@@ -158,23 +161,29 @@ function useResetScrollOnFocus(
 }
 
 /**
- * Animación de entrada: el contenido sube un poco y aparece cada vez que la pestaña toma
- * el foco. Solo en pestañas (las pantallas apiladas ya tienen su propia transición) y
- * nunca con "Reducir movimiento" activado.
+ * Animación de entrada: el contenido sube y aparece cada vez que la pestaña toma el foco.
+ * Distancia, duración y rebote dependen de la intensidad de movimiento elegida en Perfil
+ * (ver lib/preferences.ts). Solo en pestañas: las pantallas apiladas ya tienen su propia
+ * transición.
  */
 function useRiseOnFocus(enabled: boolean) {
-  const reduceMotion = useReducedMotion();
+  const motion = useMotion();
   const offset = useSharedValue(0);
   const opacity = useSharedValue(1);
+  const { riseOffset, riseDuration, riseBounce } = motion;
+  const animate = enabled && motion.enabled;
 
   useFocusEffect(
     useCallback(() => {
-      if (!enabled || reduceMotion) return;
-      const timing = { duration: 380, easing: Easing.out(Easing.cubic) };
-      // Salta a la posición inicial (sin animar) y desde ahí sube
-      offset.set(withSequence(withTiming(28, { duration: 0 }), withTiming(0, timing)));
+      if (!animate) return;
+      const timing = { duration: riseDuration, easing: Easing.out(Easing.cubic) };
+      // Salta a la posición inicial (sin animar) y desde ahí sube; en "Intenso", con rebote
+      const rise = riseBounce
+        ? withSpring(0, { damping: 11, stiffness: 120, mass: 0.9 })
+        : withTiming(0, timing);
+      offset.set(withSequence(withTiming(riseOffset, { duration: 0 }), rise));
       opacity.set(withSequence(withTiming(0, { duration: 0 }), withTiming(1, timing)));
-    }, [enabled, reduceMotion, offset, opacity]),
+    }, [animate, riseOffset, riseDuration, riseBounce, offset, opacity]),
   );
 
   return useAnimatedStyle(() => ({

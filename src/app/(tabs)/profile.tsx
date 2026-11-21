@@ -7,6 +7,7 @@ import { Section } from '@/components/section';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { ReviewCardSkeleton, SkeletonList } from '@/components/ui/skeleton';
 import { StateView } from '@/components/ui/state-view';
 import { TextField } from '@/components/ui/text-field';
@@ -16,6 +17,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useTheme } from '@/hooks/use-theme';
 import { haptics } from '@/lib/haptics';
+import {
+  setDensityLevel,
+  setMotionLevel,
+  useMotion,
+  usePreferences,
+  type DensityLevel,
+  type MotionLevel,
+} from '@/lib/preferences';
 import { areSoundsEnabled, setSoundsEnabled } from '@/lib/sounds';
 import { supabase } from '@/lib/supabase';
 import { getUserReviews } from '@/services/reviews';
@@ -71,10 +80,90 @@ function Account({ userId, email }: { userId: string; email?: string }) {
 
       <Section title="Preferencias">
         <SoundsToggle />
+        <MotionPreference />
+        <DensityPreference />
       </Section>
 
       <Button title="Cerrar sesión" variant="danger" onPress={() => supabase.auth.signOut()} />
     </Screen>
+  );
+}
+
+const MOTION_OPTIONS: { value: MotionLevel; label: string }[] = [
+  { value: 'off', label: 'Apagado' },
+  { value: 'subtle', label: 'Sutil' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'intense', label: 'Intenso' },
+];
+
+const MOTION_HINTS: Record<MotionLevel, string> = {
+  off: 'Sin animaciones: todo aparece al instante.',
+  subtle: 'Animaciones cortas y discretas.',
+  normal: 'Animaciones suaves al cambiar de pestaña y al tocar.',
+  intense: 'Entradas con rebote y botones que reaccionan más al tocar.',
+};
+
+function MotionPreference() {
+  const theme = useTheme();
+  const { motion } = usePreferences();
+  // El sistema manda: con "Reducir movimiento" activado no se anima nada
+  const systemReduced = useMotion().level === 'off' && motion !== 'off';
+
+  return (
+    <ThemedView
+      type="backgroundElement"
+      style={[styles.preferenceColumn, { borderLeftColor: theme.accent }]}>
+      <View style={styles.preferenceHeader}>
+        <ThemedText type="smallBold">Intensidad de movimiento</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {systemReduced
+            ? 'Tu teléfono tiene activado "Reducir movimiento", así que las animaciones están apagadas.'
+            : MOTION_HINTS[motion]}
+        </ThemedText>
+      </View>
+      <SegmentedControl
+        accessibilityLabel="Intensidad de movimiento"
+        options={MOTION_OPTIONS}
+        value={motion}
+        onChange={setMotionLevel}
+      />
+    </ThemedView>
+  );
+}
+
+const DENSITY_OPTIONS: { value: DensityLevel; label: string }[] = [
+  { value: 'compact', label: 'Compacta' },
+  { value: 'comfortable', label: 'Cómoda' },
+  { value: 'spacious', label: 'Amplia' },
+];
+
+const DENSITY_HINTS: Record<DensityLevel, string> = {
+  compact: 'Más contenido por pantalla: tarjetas más bajas y menos espacio entre elementos.',
+  comfortable: 'El equilibrio por defecto entre contenido y espacio.',
+  spacious: 'Más aire entre elementos y fotos más grandes.',
+};
+
+function DensityPreference() {
+  const theme = useTheme();
+  const { density } = usePreferences();
+
+  return (
+    <ThemedView
+      type="backgroundElement"
+      style={[styles.preferenceColumn, { borderLeftColor: theme.accent }]}>
+      <View style={styles.preferenceHeader}>
+        <ThemedText type="smallBold">Densidad visual</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {DENSITY_HINTS[density]}
+        </ThemedText>
+      </View>
+      <SegmentedControl
+        accessibilityLabel="Densidad visual"
+        options={DENSITY_OPTIONS}
+        value={density}
+        onChange={setDensityLevel}
+      />
+    </ThemedView>
   );
 }
 
@@ -197,6 +286,16 @@ const styles = StyleSheet.create({
   preference: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.three,
+    borderRadius: Spacing.three,
+    borderLeftWidth: 4,
+    padding: Spacing.three,
+  },
+  // En columna, sin flex: 1 (que en un contenedor de alto automático puede colapsar)
+  preferenceHeader: {
+    gap: Spacing.half,
+  },
+  preferenceColumn: {
     gap: Spacing.three,
     borderRadius: Spacing.three,
     borderLeftWidth: 4,

@@ -4,14 +4,16 @@ import { StyleSheet, View } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { useDensity } from "@/lib/preferences";
 
 export function Section({
   title,
   children,
 }: PropsWithChildren<{ title: string }>) {
   const theme = useTheme();
+  const density = useDensity();
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, { gap: density.space(Spacing.two) }]}>
       <View style={styles.header}>
         <View style={[styles.accent, { backgroundColor: theme.accent }]} />
         <ThemedText

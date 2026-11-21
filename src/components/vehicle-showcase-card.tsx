@@ -10,6 +10,7 @@ import { Icon } from "@/components/ui/icon";
 import { ImageWithSkeleton } from "@/components/ui/skeleton";
 import { FontFamily, Spacing } from "@/constants/theme";
 import { haptics } from "@/lib/haptics";
+import { useDensity, useMotion } from "@/lib/preferences";
 import { bodyTypeLabel, fuelLabel } from "@/constants/vehicle-types";
 import { useGradients, useTheme } from "@/hooks/use-theme";
 import { useVehicleImage } from "@/services/vehicle-images";
@@ -32,6 +33,8 @@ export function VehicleShowcaseCard({
   const theme = useTheme();
   const gradients = useGradients();
   const type = bodyTypeLabel(vehicle);
+  const density = useDensity();
+  const { cardPressScale } = useMotion();
   const photo = useVehicleImage(vehicle);
   const [photoFailed, setPhotoFailed] = useState(false);
   const imageUri = photoFailed ? vehicle.image_url : photo;
@@ -69,7 +72,10 @@ export function VehicleShowcaseCard({
   ] as const;
 
   return (
-    <ThemedView type="backgroundElement" style={styles.card}>
+    <ThemedView
+      type="backgroundElement"
+      style={[styles.card, { gap: density.space(Spacing.three) }]}
+    >
       <Pressable
         accessibilityRole="link"
         accessibilityLabel={`Ver ${vehicle.year} ${vehicle.make} ${vehicle.model}`}
@@ -77,9 +83,19 @@ export function VehicleShowcaseCard({
           haptics.tap();
           openDetails();
         }}
-        style={({ pressed }) => pressed && styles.pressed}
+        style={({ pressed }) =>
+          pressed && [styles.pressed, { transform: [{ scale: cardPressScale }] }]
+        }
       >
-        <View style={[styles.imageWrap, { backgroundImage: gradients.image }]}>
+        <View
+          style={[
+            styles.imageWrap,
+            {
+              height: density.showcaseImageHeight,
+              backgroundImage: gradients.image,
+            },
+          ]}
+        >
           <ImageWithSkeleton
             key={imageUri}
             source={imageUri}
@@ -210,7 +226,6 @@ const styles = StyleSheet.create({
   },
   // A todo lo ancho, sin margen: la tarjeta ya redondea las esquinas de arriba
   imageWrap: {
-    height: 230,
     overflow: "hidden",
     justifyContent: "center",
   },

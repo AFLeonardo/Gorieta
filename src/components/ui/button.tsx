@@ -5,6 +5,7 @@ import { Icon } from '@/components/ui/icon';
 import { Spacing } from '@/constants/theme';
 import { useGradients, useTheme } from '@/hooks/use-theme';
 import { haptics } from '@/lib/haptics';
+import { useMotion } from '@/lib/preferences';
 
 type ButtonProps = Omit<PressableProps, 'children'> & {
   title: string;
@@ -35,6 +36,8 @@ export function Button({
   }[variant];
   const color = { primary: theme.onTint, secondary: theme.text, danger: theme.danger }[variant];
   const isDisabled = disabled || loading;
+  // Cuánto se encoge al presionar depende de la intensidad de movimiento
+  const { pressScale } = useMotion();
 
   return (
     <Pressable
@@ -48,7 +51,7 @@ export function Button({
         styles.button,
         background,
         (state.pressed || isDisabled) && styles.dimmed,
-        state.pressed && styles.pressed,
+        state.pressed && { transform: [{ scale: pressScale }] },
         typeof style === 'function' ? style(state) : style,
       ]}
       {...rest}>
@@ -79,7 +82,5 @@ const styles = StyleSheet.create({
   dimmed: {
     opacity: 0.6,
   },
-  pressed: {
-    transform: [{ scale: 0.97 }],
-  },
+
 });

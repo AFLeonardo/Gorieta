@@ -4,7 +4,6 @@ import { StyleSheet, View, type DimensionValue, type StyleProp, type ViewStyle }
 import Animated, {
   Easing,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -13,6 +12,7 @@ import Animated, {
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useDensity, useMotion } from '@/lib/preferences';
 
 type SkeletonProps = {
   width?: DimensionValue;
@@ -24,8 +24,8 @@ type SkeletonProps = {
 };
 
 /**
- * Bloque gris que "respira" mientras carga el contenido real. Con "Reducir movimiento"
- * activado en el sistema se queda estático.
+ * Bloque gris que "respira" mientras carga el contenido real. Qué tanto respira depende de
+ * la intensidad de movimiento; con "Apagado" o "Reducir movimiento" se queda estático.
  */
 export function Skeleton({
   width = '100%',
@@ -35,19 +35,24 @@ export function Skeleton({
   style,
 }: SkeletonProps) {
   const theme = useTheme();
-  const reduceMotion = useReducedMotion();
+  const { skeletonMinOpacity } = useMotion();
   const opacity = useSharedValue(1);
 
   useEffect(() => {
-    if (reduceMotion) return;
-    opacity.value = withRepeat(
-      withTiming(0.45, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
+    if (skeletonMinOpacity >= 1) {
+      opacity.set(1);
+      return;
+    }
+    opacity.set(
+      withRepeat(
+        withTiming(skeletonMinOpacity, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      )
     );
-  }, [opacity, reduceMotion]);
+  }, [opacity, skeletonMinOpacity]);
 
-  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
 
   return (
     <Animated.View
@@ -118,10 +123,15 @@ export function SkeletonList({ count = 3, children }: { count?: number; children
 
 /** Forma de `VehicleCard`: foto completa con el texto abajo. */
 export function VehicleCardSkeleton({ compact }: { compact?: boolean }) {
+  const density = useDensity();
   return (
     <ThemedView
       type="backgroundElement"
-      style={[styles.vehicleCard, compact ? styles.vehicleCardCompact : styles.vehicleCardRegular]}>
+      style={[
+        styles.vehicleCard,
+        compact && styles.vehicleCardCompact,
+        { height: compact ? density.vehicleCardCompactHeight : density.vehicleCardHeight },
+      ]}>
       <Skeleton width="30%" height={12} />
       <Skeleton width="65%" height={22} />
       <Skeleton width="40%" height={14} />
@@ -131,9 +141,10 @@ export function VehicleCardSkeleton({ compact }: { compact?: boolean }) {
 
 /** Forma de `VehicleShowcaseCard`: imagen, títulos, tres datos y dos botones. */
 export function ShowcaseCardSkeleton() {
+  const density = useDensity();
   return (
     <ThemedView type="backgroundElement" style={styles.showcase}>
-      <Skeleton height={230} radius={0} />
+      <Skeleton height={density.showcaseImageHeight} radius={0} />
       <View style={styles.showcaseBody}>
         <Skeleton width="30%" height={14} />
         <Skeleton width="70%" height={30} />
@@ -227,12 +238,8 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     gap: Spacing.two,
   },
-  vehicleCardRegular: {
-    height: 260,
-  },
   vehicleCardCompact: {
     width: 220,
-    height: 250,
   },
   showcase: {
     borderRadius: Spacing.five,
