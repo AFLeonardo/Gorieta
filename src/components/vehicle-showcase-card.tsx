@@ -1,4 +1,3 @@
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -6,7 +5,9 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { ImageWithSkeleton } from "@/components/ui/skeleton";
 import { Spacing } from "@/constants/theme";
+import { haptics } from "@/lib/haptics";
 import { bodyTypeLabel, fuelLabel } from "@/constants/vehicle-types";
 import { useGradients, useTheme } from "@/hooks/use-theme";
 import type { Vehicle } from "@/types/vehicle";
@@ -61,11 +62,14 @@ export function VehicleShowcaseCard({
       <Pressable
         accessibilityRole="link"
         accessibilityLabel={`Ver ${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-        onPress={openDetails}
+        onPress={() => {
+          haptics.tap();
+          openDetails();
+        }}
         style={({ pressed }) => pressed && styles.pressed}
       >
         <View style={[styles.imageWrap, { backgroundImage: gradients.image }]}>
-          <Image
+          <ImageWithSkeleton
             source={vehicle.image_url}
             style={styles.image}
             contentFit="contain"
@@ -149,6 +153,7 @@ export function VehicleShowcaseCard({
                 }
           }
           loading={saving}
+          haptic={false}
           onPress={onToggleSave}
         />
       </View>

@@ -1,18 +1,22 @@
 import { useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { ReviewCard } from '@/components/review-card';
 import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
+import { ReviewCardSkeleton, SkeletonList } from '@/components/ui/skeleton';
 import { StateView } from '@/components/ui/state-view';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
+import { useTheme } from '@/hooks/use-theme';
 import { haptics } from '@/lib/haptics';
+import { areSoundsEnabled, setSoundsEnabled } from '@/lib/sounds';
 import { supabase } from '@/lib/supabase';
 import { getUserReviews } from '@/services/reviews';
 
@@ -43,6 +47,11 @@ function Account({ userId, email }: { userId: string; email?: string }) {
       <Section title={`Mis reseñas${reviews.data ? ` (${reviews.data.length})` : ''}`}>
         <StateView
           loading={reviews.loading && !reviews.data}
+          skeleton={
+            <SkeletonList count={2}>
+              <ReviewCardSkeleton />
+            </SkeletonList>
+          }
           error={reviews.error}
           onRetry={reviews.reload}
           empty={reviews.data?.length === 0}
@@ -53,8 +62,40 @@ function Account({ userId, email }: { userId: string; email?: string }) {
         ))}
       </Section>
 
+      <Section title="Preferencias">
+        <SoundsToggle />
+      </Section>
+
       <Button title="Cerrar sesión" variant="danger" onPress={() => supabase.auth.signOut()} />
     </Screen>
+  );
+}
+
+function SoundsToggle() {
+  const theme = useTheme();
+  const [enabled, setEnabled] = useState(areSoundsEnabled);
+
+  return (
+    <ThemedView type="backgroundElement" style={styles.preference}>
+      <View style={styles.preferenceText}>
+        <ThemedText type="smallBold">Sonidos</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Sonidos breves al tocar botones. Respetan el modo silencio.
+        </ThemedText>
+      </View>
+      <Switch
+        accessibilityLabel="Sonidos"
+        value={enabled}
+        onValueChange={(value) => {
+          setSoundsEnabled(value);
+          setEnabled(value);
+          // Al activarlos, el "pop" sirve de muestra
+          if (value) haptics.toggleOn();
+          else haptics.toggleOff();
+        }}
+        trackColor={{ true: theme.accent, false: theme.backgroundSelected }}
+      />
+    </ThemedView>
   );
 }
 
@@ -129,7 +170,11 @@ function AuthForm() {
           loading={loading}
           disabled={!email || password.length < 6}
         />
-        <Pressable onPress={() => setMode(isSignUp ? 'signIn' : 'signUp')}>
+        <Pressable
+          onPress={() => {
+            haptics.selection();
+            setMode(isSignUp ? 'signIn' : 'signUp');
+          }}>
           <ThemedText type="linkPrimary" style={styles.center}>
             {isSignUp ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
           </ThemedText>
@@ -140,6 +185,17 @@ function AuthForm() {
 }
 
 const styles = StyleSheet.create({
+  preference: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
+  },
+  preferenceText: {
+    flex: 1,
+    gap: Spacing.half,
+  },
   form: {
     gap: Spacing.three,
   },

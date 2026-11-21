@@ -2,6 +2,11 @@ import { LoginBanner } from "@/components/login-banner";
 import { ReviewCard } from "@/components/review-card";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
+import {
+  ReviewCardSkeleton,
+  SkeletonList,
+  VehicleCardSkeleton,
+} from "@/components/ui/skeleton";
 import { StateView } from "@/components/ui/state-view";
 import { VehicleCard } from "@/components/vehicle-card";
 import { useAsync } from "@/hooks/use-async";
@@ -50,6 +55,11 @@ export default function HomeScreen() {
           ) : (
             <StateView
               loading={top.loading && !top.data}
+              skeleton={
+                <SkeletonList count={3}>
+                  <VehicleCardSkeleton />
+                </SkeletonList>
+              }
               error={top.error}
               onRetry={top.reload}
               empty
@@ -74,6 +84,11 @@ export default function HomeScreen() {
           ) : (
             <StateView
               loading={recent.loading && !recent.data}
+              skeleton={
+                <SkeletonList count={2}>
+                  <ReviewCardSkeleton />
+                </SkeletonList>
+              }
               error={recent.error}
               onRetry={recent.reload}
               empty

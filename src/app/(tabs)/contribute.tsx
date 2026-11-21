@@ -6,6 +6,7 @@ import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { SkeletonList, VehicleCardSkeleton } from '@/components/ui/skeleton';
 import { StateView } from '@/components/ui/state-view';
 import { VehicleCard } from '@/components/vehicle-card';
 import { VehicleSearchForm } from '@/components/vehicle-search-form';
@@ -49,7 +50,7 @@ export default function ContributeScreen() {
           }}
         />
       ) : vehicleId && preselected.loading ? (
-        <StateView loading />
+        <VehicleCardSkeleton />
       ) : (
         <VehiclePicker onPick={setPicked} />
       )}
@@ -69,6 +70,12 @@ function VehiclePicker({ onPick }: { onPick: (v: VehicleSnapshot) => void }) {
         <VehicleSearchForm onSearch={setQuery} loading={results.loading} />
       </Section>
       <StateView
+        loading={results.loading}
+        skeleton={
+          <SkeletonList count={3}>
+            <VehicleCardSkeleton />
+          </SkeletonList>
+        }
         error={results.error}
         onRetry={results.reload}
         empty={results.data?.results.length === 0}

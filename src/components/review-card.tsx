@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -7,6 +6,7 @@ import { StarRating } from '@/components/star-rating';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
+import { ImageWithSkeleton } from '@/components/ui/skeleton';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { confirmDestructive } from '@/lib/confirm';
@@ -50,7 +50,7 @@ export function ReviewCard({ review, showVehicle, onDeleted }: ReviewCardProps) 
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.photos}>
           {review.photos.map((path) => (
-            <Image
+            <ImageWithSkeleton
               key={path}
               source={reviewPhotoUrl(path)}
               style={styles.photo}

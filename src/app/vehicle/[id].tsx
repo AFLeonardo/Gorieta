@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -11,6 +10,14 @@ import { StarRating } from '@/components/star-rating';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
+import {
+  ImageWithSkeleton,
+  ReviewCardSkeleton,
+  Skeleton,
+  SkeletonList,
+  VehicleCardSkeleton,
+  VehicleDetailSkeleton,
+} from '@/components/ui/skeleton';
 import { StateView } from '@/components/ui/state-view';
 import { VehicleCard } from '@/components/vehicle-card';
 import { Spacing } from '@/constants/theme';
@@ -18,6 +25,7 @@ import { useAsync } from '@/hooks/use-async';
 import { useAuth } from '@/hooks/use-auth';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
 import { getSimilarVehicles, getVehicle } from '@/services/carvector';
 import { getMarketPrice } from '@/services/marketcheck';
 import { getVehicleRating, getVehicleReviews } from '@/services/reviews';
@@ -33,11 +41,20 @@ const currency = new Intl.NumberFormat('en-US', {
 export default function VehicleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const vehicle = useAsync(() => getVehicle(id), [id]);
+  const { height: windowHeight } = useWindowDimensions();
 
   if (!vehicle.data) {
+    if (vehicle.loading) {
+      return (
+        <Screen
+          withTabBar={false}
+          hero={<VehicleDetailSkeleton heroHeight={windowHeight / 3} />}
+        />
+      );
+    }
     return (
       <Screen withTabBar={false}>
-        <StateView loading={vehicle.loading} error={vehicle.error} onRetry={vehicle.reload} />
+        <StateView error={vehicle.error} onRetry={vehicle.reload} />
       </Screen>
     );
   }
@@ -106,6 +123,12 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
           ) : (
             <StateView
               loading={price.loading}
+              skeleton={
+                <>
+                  <Skeleton width="45%" height={28} />
+                  <Skeleton width="80%" height={12} />
+                </>
+              }
               error={price.error}
               onRetry={price.reload}
               empty
@@ -151,6 +174,12 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
         ) : (
           <StateView
             loading={similar.loading}
+            skeleton={
+              <View style={styles.carouselSkeleton}>
+                <VehicleCardSkeleton compact />
+                <VehicleCardSkeleton compact />
+              </View>
+            }
             error={similar.error}
             onRetry={similar.reload}
             empty
@@ -162,6 +191,11 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
       <Section title="Reseñas">
         <StateView
           loading={reviews.loading && !reviews.data}
+          skeleton={
+            <SkeletonList count={2}>
+              <ReviewCardSkeleton />
+            </SkeletonList>
+          }
           error={reviews.error}
           onRetry={reviews.reload}
           empty={reviews.data?.length === 0}
@@ -196,7 +230,7 @@ function HeroImage({ uri }: { uri: Vehicle['image_url'] }) {
 
   return (
     <View style={{ height }}>
-      <Image
+      <ImageWithSkeleton
         source={uri}
         style={StyleSheet.absoluteFill}
         contentFit="cover"
@@ -228,11 +262,15 @@ function SaveButton({ vehicle }: { vehicle: Vehicle }) {
       router.navigate('/profile');
       return;
     }
+    if (isSaved) haptics.toggleOff();
+    else haptics.toggleOn();
     setBusy(true);
     try {
       if (isSaved) await unsaveVehicle(vehicle.id);
       else await saveVehicle(user.id, toSnapshot(vehicle));
       setOverride(!isSaved);
+    } catch {
+      haptics.error();
     } finally {
       setBusy(false);
     }
@@ -244,6 +282,7 @@ function SaveButton({ vehicle }: { vehicle: Vehicle }) {
       variant="secondary"
       title={isSaved ? 'Guardado ✓' : 'Guardar'}
       loading={busy || saved.loading}
+      haptic={!user}
       onPress={toggle}
     />
   );
@@ -306,5 +345,10 @@ const styles = StyleSheet.create({
   },
   carousel: {
     gap: Spacing.two,
+  },
+  carouselSkeleton: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    overflow: 'hidden',
   },
 });

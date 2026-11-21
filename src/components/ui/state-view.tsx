@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -10,13 +11,23 @@ type StateViewProps = {
   empty?: boolean;
   emptyText?: string;
   onRetry?: () => void;
+  /** Se muestra en lugar del indicador de carga (ver components/ui/skeleton.tsx). */
+  skeleton?: ReactNode;
 };
 
 /**
  * Muestra carga, error o vacío. Devuelve null si ninguno aplica,
  * para que la pantalla renderice su contenido normal.
  */
-export function StateView({ loading, error, empty, emptyText, onRetry }: StateViewProps) {
+export function StateView({
+  loading,
+  error,
+  empty,
+  emptyText,
+  onRetry,
+  skeleton,
+}: StateViewProps) {
+  if (loading && skeleton) return <>{skeleton}</>;
   if (loading) {
     return (
       <View style={styles.container}>

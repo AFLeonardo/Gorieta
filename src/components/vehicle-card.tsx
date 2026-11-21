@@ -1,6 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "expo-image";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
 import {
   type GestureResponderEvent,
@@ -12,8 +11,10 @@ import {
 import { StarRating } from "@/components/star-rating";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { ImageWithSkeleton } from "@/components/ui/skeleton";
 import { FontFamily, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { haptics } from "@/lib/haptics";
 import { type VehicleSnapshot } from "@/types/vehicle";
 
 const ON_IMAGE = "#F1F5F9";
@@ -58,13 +59,26 @@ export function VehicleCard({
     e.stopPropagation();
     e.preventDefault();
     const next = !isSaved;
+    // Sin onToggleSave nadie más da respuesta háptica (useSavedVehicles ya la da)
+    if (!onToggleSave) {
+      if (next) haptics.toggleOn();
+      else haptics.toggleOff();
+    }
     setLocalSaved(next);
     onToggleSave?.(next);
   };
 
-  const card = (
+  const open = () => {
+    haptics.tap();
+    if (onPress) onPress();
+    else router.push(`/vehicle/${vehicle.vehicle_id}`);
+  };
+
+  return (
     <Pressable
-      onPress={onPress}
+      accessibilityRole={onPress ? "button" : "link"}
+      accessibilityLabel={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+      onPress={open}
       style={({ pressed }) => [
         compact && styles.compact,
         pressed && styles.pressed,
@@ -75,11 +89,12 @@ export function VehicleCard({
         style={[styles.card, compact ? styles.cardCompact : styles.cardRegular]}
       >
         {/* Foto a toda la tarjeta */}
-        <Image
+        <ImageWithSkeleton
           source={vehicle.image_url}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           transition={200}
+          skeletonColor={theme.border}
         />
 
         {/* Degradado inferior hacia la foto */}
@@ -158,18 +173,12 @@ export function VehicleCard({
       </ThemedView>
     </Pressable>
   );
-
-  if (onPress) return card;
-  return (
-    <Link href={`/vehicle/${vehicle.vehicle_id}`} asChild>
-      {card}
-    </Link>
-  );
 }
 
 const styles = StyleSheet.create({
   pressed: {
     opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
   compact: {
     width: 220,

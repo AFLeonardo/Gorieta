@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Icon } from '@/components/ui/icon';
 import { StateView } from '@/components/ui/state-view';
 import { TextField } from '@/components/ui/text-field';
+import { ShowcaseCardSkeleton, SkeletonList } from '@/components/ui/skeleton';
 import { VehicleShowcaseCard } from '@/components/vehicle-showcase-card';
 import { Spacing } from '@/constants/theme';
 import { VEHICLE_TYPES } from '@/constants/vehicle-types';
@@ -15,6 +16,7 @@ import { useAsync } from '@/hooks/use-async';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useSavedVehicles } from '@/hooks/use-saved-vehicles';
 import { useTheme } from '@/hooks/use-theme';
+import { haptics } from '@/lib/haptics';
 import { searchVehiclesByText } from '@/services/carvector';
 import { toSnapshot } from '@/types/vehicle';
 
@@ -66,7 +68,10 @@ export default function SearchScreen() {
           accessibilityRole="button"
           accessibilityLabel="Filtros"
           accessibilityState={{ expanded: showFilters }}
-          onPress={() => setShowFilters((s) => !s)}
+          onPress={() => {
+            haptics.selection();
+            setShowFilters((s) => !s);
+          }}
           style={[
             styles.iconButton,
             { backgroundColor: showFilters ? theme.tint : theme.backgroundElement },
@@ -115,7 +120,9 @@ export default function SearchScreen() {
           emptyText="Busca por marca y modelo, y filtra por tipo de auto: SUV, sedán, pickup, eléctrico…"
         />
       ) : results.loading ? (
-        <StateView loading />
+        <SkeletonList count={2}>
+          <ShowcaseCardSkeleton />
+        </SkeletonList>
       ) : (
         <>
           <StateView

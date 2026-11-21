@@ -21,16 +21,19 @@ export function useSavedVehicles() {
 
   async function toggle(vehicle: VehicleSnapshot) {
     if (!user) {
+      haptics.tap();
       router.navigate('/profile');
       return;
     }
     const wasSaved = isSaved(vehicle.vehicle_id);
+    // Respuesta inmediata al toque; si la petición falla, suena el error después
+    if (wasSaved) haptics.toggleOff();
+    else haptics.toggleOn();
     setPendingId(vehicle.vehicle_id);
     try {
       if (wasSaved) await unsaveVehicle(vehicle.vehicle_id);
       else await saveVehicle(user.id, vehicle);
       setOverrides((o) => ({ ...o, [vehicle.vehicle_id]: !wasSaved }));
-      haptics.success();
     } catch (error) {
       haptics.error();
       const message = error instanceof Error ? error.message : 'Inténtalo de nuevo.';

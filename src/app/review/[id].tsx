@@ -4,6 +4,7 @@ import { ReviewForm } from '@/components/review-form';
 import { Screen } from '@/components/screen';
 import { Section } from '@/components/section';
 import { ThemedText } from '@/components/themed-text';
+import { PanelSkeleton, VehicleCardSkeleton } from '@/components/ui/skeleton';
 import { StateView } from '@/components/ui/state-view';
 import { VehicleCard } from '@/components/vehicle-card';
 import { useAsync } from '@/hooks/use-async';
@@ -21,7 +22,17 @@ export default function EditReviewScreen() {
   if (!review.data) {
     return (
       <Screen withTabBar={false}>
-        <StateView loading={review.loading} error={review.error} onRetry={review.reload} />
+        <StateView
+          loading={review.loading}
+          skeleton={
+            <>
+              <VehicleCardSkeleton />
+              <PanelSkeleton rows={4} />
+            </>
+          }
+          error={review.error}
+          onRetry={review.reload}
+        />
       </Screen>
     );
   }

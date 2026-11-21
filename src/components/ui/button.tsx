@@ -48,6 +48,7 @@ export function Button({
         styles.button,
         background,
         (state.pressed || isDisabled) && styles.dimmed,
+        state.pressed && styles.pressed,
         typeof style === 'function' ? style(state) : style,
       ]}
       {...rest}>
@@ -77,5 +78,8 @@ const styles = StyleSheet.create({
   },
   dimmed: {
     opacity: 0.6,
+  },
+  pressed: {
+    transform: [{ scale: 0.97 }],
   },
 });

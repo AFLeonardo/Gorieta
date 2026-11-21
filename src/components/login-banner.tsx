@@ -47,7 +47,10 @@ export function LoginBanner({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Iniciar sesión"
-          onPress={() => router.navigate("/profile")}
+          onPress={() => {
+            haptics.tap();
+            router.navigate("/profile");
+          }}
         >
           <Text style={styles.link}>Iniciar sesión</Text>
         </Pressable>
