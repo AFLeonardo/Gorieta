@@ -102,7 +102,8 @@ function VehicleDetail({ vehicle }: { vehicle: Vehicle }) {
                   pathname: '/review/[id]',
                   params: { id: ownReview.id },
                 })
-              : router.navigate({
+              : // dismissTo regresa a las pestañas ya abiertas; navigate apilaría otra copia
+                router.dismissTo({
                   pathname: '/contribute',
                   params: { vehicleId: vehicle.id },
                 })
@@ -259,7 +260,7 @@ function SaveButton({ vehicle }: { vehicle: Vehicle }) {
 
   async function toggle() {
     if (!user) {
-      router.navigate('/profile');
+      router.dismissTo('/profile');
       return;
     }
     if (isSaved) haptics.toggleOff();
