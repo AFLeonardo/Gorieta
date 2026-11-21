@@ -50,8 +50,7 @@
           "cameraPermission": "Permite a $(PRODUCT_NAME) usar la cámara para tomar fotos de tu vehículo en tus reseñas.",
           "microphonePermission": false
         }
-      ],
-      "expo-font"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

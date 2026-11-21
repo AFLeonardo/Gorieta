@@ -32,7 +32,6 @@ function Account({ userId, email }: { userId: string; email?: string }) {
     return data as { username: string | null };
   }, [userId]);
   const reviews = useAsync(() => getUserReviews(userId), [userId]);
-
   useRefreshOnFocus(reviews.reload);
 
   return (
