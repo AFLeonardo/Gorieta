@@ -9,8 +9,8 @@ const PALETTES = {
 } as const;
 
 const LOGOS = {
-  light: require("C:\\Users\\emili\\Gorieta\\assets\\images\\logo-diurno.png"),
-  dark: require("C:\\Users\\emili\\Gorieta\\assets\\images\\logo-diurno.png"),
+  light: require("@/assets/images/logo-diurno.png"),
+  dark: require("@/assets/images/logo-diurno.png"),
 } as const;
 
 type Props = {
